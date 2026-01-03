@@ -1,0 +1,12 @@
+[project]
+name = "udacity-generative-ai-course-2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "chromadb>=0.3.23",
+    "pandas==2.3.0",
+    "ragas>=0.4.2",
+    "streamlit==1.47.0",
+]
