@@ -27,6 +27,7 @@ import time
 from datetime import datetime
 import argparse
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+import re
 
 # Configure logging
 logging.basicConfig(
@@ -60,10 +61,37 @@ class ChromaEmbeddingPipelineTextOnly:
             chunk_size: Maximum size of text chunks
             chunk_overlap: Overlap between chunks
         """
-        # TODO: Initialize OpenAI client
-        # TODO: Store configuration parameters
-        # TODO: Initialize ChromaDB client
-        # TODO: Create or get collection
+        # DONE: Store configuration parameters
+        self.api_key=openai_api_key
+        self.chroma_persist_directory = chroma_persist_directory
+        self.collection_name=collection_name
+        self.embedding_model=embedding_model
+        self.chunk_size=chunk_size
+        self.chunk_overlap=chunk_overlap
+
+        # DONE: Create Embeddings function
+        self.openai_ef:Any = OpenAIEmbeddingFunction(
+                api_key=self.api_key,
+                model_name=self.embedding_model
+            )
+        # DONE: Initialize OpenAI client
+        self.openai_client = OpenAI(api_key=self.api_key)
+
+        # DONE: Initialize ChromaDB client
+        self.chroma_client = chromadb.PersistentClient(
+            path=self.chroma_persist_directory,
+            settings=Settings(anonymized_telemetry=False)
+        )
+
+        # DONE: Create or get collection
+        self.collection = self.chroma_client.get_or_create_collection(
+            name=self.collection_name,
+            metadata={
+                "description": "A collection of Nasa Mission Space Data"
+                },
+            embedding_function=self.openai_ef
+        )
+
     
     def chunk_text(self, text: str, metadata: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
         """
@@ -76,11 +104,68 @@ class ChromaEmbeddingPipelineTextOnly:
         Returns:
             List of (chunk_text, chunk_metadata) tuples
         """
-        # TODO: Handle short texts that don't need chunking
-        # TODO: Implement chunking logic with overlap
-        # TODO: Try to break at sentence boundaries
-        # TODO: Create metadata for each chunk
-        pass
+
+        # DONE: Handle short texts that don't need chunking
+        if len(text) <= self.chunk_size:
+            chunk_metadata = metadata.copy()
+            chunk_metadata.update({
+                'chunk_index': 0,
+                'chunk_count': 1,
+                'chunk_size': len(text)
+            })
+            return [(text, chunk_metadata)]
+
+        # DONE: Implement chunking logic with overlap
+        chunks: List[Tuple[str, Dict[str, Any]]] = []
+        current_size = 0
+        current_chunk = []
+
+        # DONE: Break at sentence boundaries using regex
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+        # Build chunks by accumulating sentences
+        for sentence in sentences:
+            # If adding this sentence exceeds chunk_size, save current chunk
+            if current_size + len(sentence) > self.chunk_size and current_chunk:
+                # Save completed chunk with metadata
+                chunk_text = ' '.join(current_chunk)
+                chunk_metadata = metadata.copy()
+                chunk_metadata.update({
+                    'chunk_index': len(chunks),
+                    'chunk_size': len(chunk_text),
+                    'chunk_count': 0
+                })
+                chunks.append((chunk_text, chunk_metadata))
+                
+                # Create overlap by keeping end sentences from current chunk
+                overlap_text = ' '.join(current_chunk)
+                while len(overlap_text) > self.chunk_overlap and len(current_chunk) > 1:
+                    current_chunk.pop(0)
+                    overlap_text = ' '.join(current_chunk)
+                
+                # Reset size to overlap size for next chunk
+                current_size = len(overlap_text)
+            
+            # Add sentence to current chunk
+            current_chunk.append(sentence)
+            current_size += len(sentence) + 1
+
+        # Add final chunk if it has content
+        if current_chunk:
+            chunk_text = ' '.join(current_chunk)
+            chunk_metadata = metadata.copy()
+            chunk_metadata.update({
+                'chunk_index': len(chunks),
+                'chunk_size': len(chunk_text),
+                'chunk_count': 0
+            })
+            chunks.append((chunk_text, chunk_metadata))
+
+        # Update all chunks with total chunk count
+        for _, chunk_meta in chunks:
+            chunk_meta['chunk_count'] = len(chunks)
+
+        return chunks
     
     def check_document_exists(self, doc_id: str) -> bool:
         """

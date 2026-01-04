@@ -102,18 +102,6 @@ def retrieve_documents(collection:Collection, query: str, n_results: int = 3,
     # DONE: Return query results to caller
     return result
 
-
-            # metadata = {
-            #     'source': file_path.stem,
-            #     'file_path': str(file_path),
-            #     'file_type': 'text',
-            #     'content_type': 'full_text',
-            #     'mission': self.extract_mission_from_path(file_path),
-            #     'data_type': self.extract_data_type_from_path(file_path),
-            #     'document_category': self.extract_document_category_from_filename(file_path.name),
-            #     'file_size': len(content),
-            #     'processed_timestamp': datetime.now().isoformat()
-            # }
     
 def format_context(documents: List[str], metadatas: List[Dict]) -> str:
     """Format retrieved documents into context"""

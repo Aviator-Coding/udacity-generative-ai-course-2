@@ -217,8 +217,8 @@ data/
 ## 🎓 Checkpoints
 
 ### **Checkpoint 1: Basic Functionality**
-- [ ] LLM client generates responses
-- [ ] RAG client discovers ChromaDB backends
+- [X] LLM client generates responses
+- [X] RAG client discovers ChromaDB backends
 - [ ] Embedding pipeline processes sample files
 - [ ] Evaluation system calculates basic metrics
 
