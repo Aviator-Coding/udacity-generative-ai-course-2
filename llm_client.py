@@ -1,5 +1,7 @@
 from typing import Dict, List
 from openai import OpenAI
+from dotenv import load_dotenv
+load_dotenv()
 
 def generate_response(openai_key: str, user_message: str, context: str, 
                      conversation_history: List[Dict], model: str = "gpt-3.5-turbo") -> str:
@@ -7,9 +9,25 @@ def generate_response(openai_key: str, user_message: str, context: str,
 
     # TODO: Define system prompt
     # TODO: Set context in messages
-    # TODO: Add chat history
-    # TODO: Creaet OpenAI Client
-    # TODO: Send request to OpenAI
-    # TODO: Return response
+    system_prompt=""" You are NASA expert your goal is to take the user's question and the context from your RAG client and generate a helpful, human-readable answer
 
-    pass
+USERS CONTEXT:
+{context}
+"""
+
+    # TODO: Add chat history
+    messages = conversation_history
+    messages.append(
+         {"role": "user", "content": user_message},
+    )
+    # TODO: Creaet OpenAI Client
+    client = OpenAI()
+    # TODO: Send request to OpenAI
+    response = client.responses.create(
+        model=model,
+        instructions=system_prompt,
+        input=messages
+    )
+
+    # TODO: Return response
+    return response.output_text
