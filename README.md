@@ -45,6 +45,8 @@ Tasks:
 Define a system prompt that tells the model to act as a NASA expert.
 Manage conversation history so the model can remember previous turns.
 Write the function that sends the request to OpenAI and returns the model's response.
+
+
 2. Build the RAG Client (rag_client.py)
 This is the core of your retrieval system. You'll build the logic that takes a user's question, searches the ChromaDB database to find the most relevant document chunks, and then formats that information neatly to be used as context.
 What You'll Do: Next, you'll build the "retrieval" part of the RAG system. This component is responsible for searching the vector database to find the most relevant documents to answer a user's question.

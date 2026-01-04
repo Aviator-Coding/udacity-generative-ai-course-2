@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.13.0"
 
 [[package]]
@@ -2957,6 +2957,8 @@ dependencies = [
     { name = "chromadb" },
     { name = "dotenv" },
     { name = "pandas" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
     { name = "ragas" },
     { name = "streamlit" },
 ]
@@ -2966,6 +2968,8 @@ requires-dist = [
     { name = "chromadb", specifier = ">=0.3.23" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "pandas", specifier = ">=2.3.0" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "pydantic-core", specifier = ">=2.41.5" },
     { name = "ragas", specifier = ">=0.4.2" },
     { name = "streamlit", specifier = "==1.47.0" },
 ]
