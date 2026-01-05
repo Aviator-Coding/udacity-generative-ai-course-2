@@ -177,10 +177,11 @@ class ChromaEmbeddingPipelineTextOnly:
         Returns:
             True if document exists, False otherwise
         """
-        # TODO: Query collection for document ID
-        # TODO: Return True if exists, False otherwise
-        pass
-    
+        # DONE: Query collection for document ID
+        result = self.collection.get(ids=[doc_id])
+        # DONE: Return True if exists, False otherwise
+        return bool(result['ids'])
+   
     def update_document(self, doc_id: str, text: str, metadata: Dict[str, Any]) -> bool:
         """
         Update an existing document in the collection
@@ -282,20 +283,33 @@ class ChromaEmbeddingPipelineTextOnly:
         Returns:
             Embedding vector
         """
-        # TODO: Call OpenAI embeddings API
-        # TODO: Return embedding vector
-        # TODO: Add error handling
-        pass
+        try:
+        # DONE: Call OpenAI embeddings API
+            response = self.openai_client.embeddings.create(
+                input=text,
+                model=self.embedding_model
+            )
+        # DONE: Return embedding vector
+            return response.data[0].embedding
+        
+        # DONE: Add error handling
+        except Exception as e:
+            logger.error(f"Error getting embeddings {e}")
+
 
     def generate_document_id(self, file_path: Path, metadata: Dict[str, Any]) -> str:
         """
         Generate stable document ID based on file path and chunk position
         This allows for document updates without changing IDs
         """
-        # TODO: Create consistent ID format
         # TODO: Use mission, source, and chunk_index
         # Format: mission_source_chunk_0001
-        pass
+        mission = metadata.get('mission', 'unknown')
+        source = metadata.get('source', file_path.stem)
+        chunk_index = metadata.get('chunk_index', 0)
+        # TODO: Create consistent ID format
+        return f"{mission}_{source}_chunk_{chunk_index:04d}"
+
     
     def process_text_file(self, file_path: Path) -> List[Tuple[str, Dict[str, Any]]]:
         """
