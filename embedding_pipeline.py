@@ -296,20 +296,18 @@ class ChromaEmbeddingPipelineTextOnly:
         except Exception as e:
             logger.error(f"Error getting embeddings {e}")
 
-
     def generate_document_id(self, file_path: Path, metadata: Dict[str, Any]) -> str:
         """
         Generate stable document ID based on file path and chunk position
         This allows for document updates without changing IDs
         """
-        # TODO: Use mission, source, and chunk_index
+        # DONE: Use mission, source, and chunk_index
         # Format: mission_source_chunk_0001
         mission = metadata.get('mission', 'unknown')
         source = metadata.get('source', file_path.stem)
         chunk_index = metadata.get('chunk_index', 0)
-        # TODO: Create consistent ID format
+        # DONE: Create consistent ID format
         return f"{mission}_{source}_chunk_{chunk_index:04d}"
-
     
     def process_text_file(self, file_path: Path) -> List[Tuple[str, Dict[str, Any]]]:
         """
@@ -459,12 +457,12 @@ class ChromaEmbeddingPipelineTextOnly:
         
         return filtered_files
     
-    def add_documents_to_collection(self, documents: List[Tuple[str, Dict[str, Any]]], 
-                                   file_path: Path, batch_size: int = 50, 
+    def add_documents_to_collection(self, documents: List[Tuple[str, Dict[str, Any]]],
+                                   file_path: Path, batch_size: int = 50,
                                    update_mode: str = 'skip') -> Dict[str, int]:
         """
         Add documents to ChromaDB collection in batches with update handling
-        
+
         Args:
             documents: List of (text, metadata) tuples
             file_path: Path to the source file
@@ -473,37 +471,110 @@ class ChromaEmbeddingPipelineTextOnly:
                         'skip' - skip existing documents
                         'update' - update existing documents
                         'replace' - delete all existing documents from file and re-add
-            
+
         Returns:
             Dictionary with counts of added, updated, and skipped documents
         """
         if not documents:
             return {'added': 0, 'updated': 0, 'skipped': 0}
-        
+
         stats = {'added': 0, 'updated': 0, 'skipped': 0}
-        
-        # TODO: Handle different update modes (skip, update, replace)
-        # TODO: Process documents in batches
-        # TODO: For each document:
-        #   - Generate document ID
-        #   - Check if exists
-        #   - Get embedding
-        #   - Add or update in collection
-        # TODO: Return statistics
+
+        # Handle replace mode upfront - delete all existing docs for this file in batches
+        if update_mode == 'replace':
+            # get all docs from file_path
+            existing_ids = self.get_file_documents(file_path)
+    
+            if existing_ids:
+                # Create batches and delete
+                for i in range(0, len(existing_ids), batch_size):
+                    batch_ids = existing_ids[i:i + batch_size]
+                    self.collection.delete(ids=batch_ids)
+
+        # Process documents in batches using true batch operations
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i:i + batch_size]
+
+            # Generate all IDs for this batch first
+            batch_data = []
+            for text, metadata in batch:
+                doc_id = self.generate_document_id(file_path, metadata)
+                batch_data.append((doc_id, text, metadata))
+
+            all_ids = [item[0] for item in batch_data]
+
+            # For skip mode: check which IDs exist in one batch query
+            if update_mode == 'skip':
+                existing_result = self.collection.get(ids=all_ids)
+                existing_ids_set = set(existing_result['ids'])
+
+                # Filter to only new documents
+                new_docs = [(doc_id, text, meta) for doc_id, text, meta in batch_data
+                           if doc_id not in existing_ids_set]
+
+                stats['skipped'] += len(existing_ids_set)
+
+                if new_docs:
+                    # Generate embeddings only for new documents
+                    to_add = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
+                    for doc_id, text, metadata in new_docs:
+                        embedding = self.get_embedding(text)
+                        to_add['ids'].append(doc_id)
+                        to_add['documents'].append(text)
+                        to_add['metadatas'].append(metadata)
+                        to_add['embeddings'].append(embedding)
+
+                    self.collection.add(**to_add)
+                    stats['added'] += len(to_add['ids'])
+
+            # For update mode: use upsert which adds new and updates existing
+            elif update_mode == 'update':
+                # Check existing to track stats accurately
+                existing_result = self.collection.get(ids=all_ids)
+                existing_ids_set = set(existing_result['ids'])
+
+                # Generate embeddings for all documents
+                to_upsert = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
+                for doc_id, text, metadata in batch_data:
+                    embedding = self.get_embedding(text)
+                    to_upsert['ids'].append(doc_id)
+                    to_upsert['documents'].append(text)
+                    to_upsert['metadatas'].append(metadata)
+                    to_upsert['embeddings'].append(embedding)
+
+                # Use upsert for true batch add+update
+                self.collection.upsert(**to_upsert)
+
+                # Track stats
+                stats['updated'] += len(existing_ids_set)
+                stats['added'] += len(to_upsert['ids']) - len(existing_ids_set)
+
+            # For replace mode: just add (already deleted existing above)
+            elif update_mode == 'replace':
+                to_add = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
+                for doc_id, text, metadata in batch_data:
+                    embedding = self.get_embedding(text)
+                    to_add['ids'].append(doc_id)
+                    to_add['documents'].append(text)
+                    to_add['metadatas'].append(metadata)
+                    to_add['embeddings'].append(embedding)
+
+                self.collection.add(**to_add)
+                stats['added'] += len(to_add['ids'])
 
         return stats
     
     def process_all_text_data(self, base_path: str, update_mode: str = 'skip') -> Dict[str, int]:
         """
         Process all text files and add to ChromaDB
-        
+
         Args:
             base_path: Base directory containing data folders
             update_mode: How to handle existing documents:
                         'skip' - skip existing documents (default)
                         'update' - update existing documents
                         'replace' - delete all existing documents from file and re-add
-            
+
         Returns:
             Statistics about processed files
         """
@@ -516,33 +587,80 @@ class ChromaEmbeddingPipelineTextOnly:
             'total_chunks': 0,
             'missions': {}
         }
-        
-        # TODO: Get files to process
-        # TODO: Loop through each file
-        # TODO: Process file and add to collection
-        # TODO: Update statistics
-        # TODO: Handle errors gracefully
-        
+
+        # Get all text files to process
+        text_files = self.scan_text_files_only(base_path)
+        logger.info(f"Starting processing of {len(text_files)} files with mode: {update_mode}")
+
+        # Process each file
+        for file_path in text_files:
+            try:
+                # Extract mission for stats tracking
+                mission = self.extract_mission_from_path(file_path)
+
+                # Process file to get document chunks
+                documents = self.process_text_file(file_path)
+
+                if not documents:
+                    logger.warning(f"No documents extracted from: {file_path}")
+                    continue
+
+                stats['total_chunks'] += len(documents)
+
+                # Add documents to collection
+                result = self.add_documents_to_collection(documents, file_path, update_mode=update_mode)
+
+                # Update stats
+                stats['files_processed'] += 1
+                stats['documents_added'] += result['added']
+                stats['documents_updated'] += result['updated']
+                stats['documents_skipped'] += result['skipped']
+
+                # Track per-mission stats
+                if mission not in stats['missions']:
+                    stats['missions'][mission] = {'files': 0, 'chunks': 0, 'added': 0}
+                stats['missions'][mission]['files'] += 1
+                stats['missions'][mission]['chunks'] += len(documents)
+                stats['missions'][mission]['added'] += result['added']
+
+                logger.debug(f"Processed {file_path.name}: {result}")
+
+            except Exception as e:
+                logger.error(f"Error processing {file_path}: {e}")
+                stats['errors'] += 1
+
+        logger.info(f"Processing complete: {stats['files_processed']} files, "
+                   f"{stats['documents_added']} added, {stats['documents_updated']} updated, "
+                   f"{stats['documents_skipped']} skipped, {stats['errors']} errors")
+
         return stats
     
     def get_collection_info(self) -> Dict[str, Any]:
         """Get information about the ChromaDB collection"""
-        # TODO: Return collection name, document count, metadata
-        pass
+        return {
+            'name': self.collection.name,
+            'count': self.collection.count(),
+            'metadata': self.collection.metadata
+        }
     
     def query_collection(self, query_text: str, n_results: int = 5) -> Dict[str, Any]:
         """
         Query the collection for testing
-        
+
         Args:
             query_text: Query text
             n_results: Number of results to return
-            
+
         Returns:
             Query results
         """
-        # TODO: Perform test query and return results
-        pass
+        query_embedding = self.get_embedding(query_text)
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=n_results,
+            include=['documents', 'metadatas', 'distances']
+        )
+        return results
     
     def get_collection_stats(self) -> Dict[str, Any]:
         """Get detailed statistics about the collection"""
