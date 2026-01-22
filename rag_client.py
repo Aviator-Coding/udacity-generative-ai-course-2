@@ -74,10 +74,14 @@ def discover_chroma_backends() -> Dict[str, Dict[str, str]]:
 def initialize_rag_system(chroma_dir: str, collection_name: str):
     """Initialize the RAG system with specified backend (cached for performance)"""
 
-    # DONE: Create a chomadb persistentclient
-    client = chromadb.PersistentClient(path=chroma_dir)
-    # DONE: Return the collection with the collection_name
-    return client.get_or_create_collection(collection_name)
+    try:
+        # DONE: Create a chomadb persistentclient
+        client = chromadb.PersistentClient(path=chroma_dir)
+        # DONE: Return the collection with the collection_name
+        collection = client.get_or_create_collection(collection_name)
+        return collection, True, None
+    except Exception as e:
+        return None, False, str(e)
 
 
 def retrieve_documents(collection:Collection, query: str, n_results: int = 3,
