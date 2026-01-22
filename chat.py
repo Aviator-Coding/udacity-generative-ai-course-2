@@ -220,10 +220,12 @@ def main():
                 # Format context
                 context = ""
                 contexts_list = []
-                if docs_result and docs_result.get("documents"):
+                if docs_result and docs_result.get("documents") and docs_result["documents"][0]:
                     context = format_context(docs_result["documents"][0], docs_result["metadatas"][0])
                     contexts_list = docs_result["documents"][0]
                     st.session_state.last_contexts = contexts_list
+                else:
+                    st.warning("No relevant documents found. Response generated from general knowledge.")
                 
                 # Generate response
                 response = generate_response(
@@ -235,8 +237,8 @@ def main():
                 )
                 st.markdown(response)
                 
-                # Evaluate response quality if enabled
-                if enable_evaluation and RAGAS_AVAILABLE:
+                # Evaluate response quality if enabled (only when contexts exist)
+                if enable_evaluation and RAGAS_AVAILABLE and contexts_list:
                     with st.spinner("Evaluating response quality..."):
                         evaluation_scores = evaluate_response_quality(
                             prompt, 

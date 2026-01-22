@@ -10,18 +10,22 @@ def generate_response(openai_key: str, user_message: str, context: str,
     """Generate response using OpenAI with context"""
 
     # DONE: Define system prompt
-    system_prompt = """ You are NASA expert your goal is to take the user's question and use only your context from your RAG client and generate a helpful, human-readable answer.
-You must always include the data source"""
+    system_prompt = """You are a NASA expert. Answer questions using ONLY the provided context.
+- If context is provided, cite the specific mission/source from the document metadata
+- If context is empty or doesn't contain relevant information, say "I don't have information about that in my documents."
+- Never make up sources"""
     # DONE: Set context in messages
-    user_prompt = f""" Based on the following context, answer the question clearly and concisely.
+    user_prompt = f"""Based on the following context, answer the question.
 
 Context:
 {context}
 
 Question: {user_message}
 
-Output Format:
-Answer: <youre answer> (<the source>)"""
+If you found relevant information, format as:
+Answer: [your answer] (Source: [mission name from context])
+
+If no relevant context was provided, say so clearly."""
 
     # DONE: Add chat history
     messages = conversation_history
