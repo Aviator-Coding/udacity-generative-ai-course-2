@@ -55,65 +55,157 @@ openai_key = os.environ.get('OPENAI_API_KEY')
 # print(response)
 
 # Test chunk_text method
-from embedding_pipeline import ChromaEmbeddingPipelineTextOnly
+# from embedding_pipeline import ChromaEmbeddingPipelineTextOnly
 
 
-if openai_key:
+# if openai_key:
+#     pipeline = ChromaEmbeddingPipelineTextOnly(
+#         openai_api_key=openai_key,
+#         chroma_persist_directory="./chroma_db_test",
+#         collection_name="test_chunks",
+#         chunk_size=100,
+#         chunk_overlap=20
+#     )
+    
+#     # Test 1: Short text (no chunking needed)
+#     print("Test 1: Short text")
+#     short_text = "This is a short sentence."
+#     metadata = {
+#         "mission": "test_mission",
+#         "source": "test_source.txt",
+#         "document_category": "test"
+#     }
+#     result = pipeline.chunk_text(short_text, metadata)
+#     print(f"Input length: {len(short_text)}")
+#     print(f"Number of chunks: {len(result)}")
+#     print(f"Chunk 0: {result[0][0]}")
+#     print(f"Metadata: {result[0][1]}\n")
+    
+#     # Test 2: Long text with multiple sentences
+#     print("Test 2: Long text with multiple sentences")
+#     long_text = "The Apollo 11 mission was historic. It landed on the Moon. Neil Armstrong walked on the lunar surface. Buzz Aldrin joined him. Michael Collins orbited above. This was a tremendous achievement for humanity."
+#     result = pipeline.chunk_text(long_text, metadata)
+#     print(f"Input length: {len(long_text)}")
+#     print(f"Number of chunks: {len(result)}")
+#     for i, (chunk_text, chunk_meta) in enumerate(result):
+#         print(f"Chunk {i}: {chunk_text}")
+#         print(f"  Size: {chunk_meta['chunk_size']}, Index: {chunk_meta['chunk_index']}, Count: {chunk_meta['chunk_count']}")
+#     print()
+    
+#     # Test 3: Verify overlap between chunks
+#     print("Test 3: Verify overlap between chunks")
+#     if len(result) > 1:
+#         chunk_0_text = result[0][0]
+#         chunk_1_text = result[1][0]
+        
+#         # Split into sentences and check overlap
+#         chunk_0_sentences = chunk_0_text.split('. ')
+#         chunk_1_sentences = chunk_1_text.split('. ')
+        
+#         # Check if last sentence of chunk 0 appears in chunk 1
+#         if chunk_0_sentences and chunk_1_sentences:
+#             last_sent_chunk_0 = chunk_0_sentences[-1]
+#             overlap_found = last_sent_chunk_0 in chunk_1_text
+#             print(f"Last sentence of Chunk 0: {last_sent_chunk_0}")
+#             print(f"First sentence of Chunk 1: {chunk_1_sentences[0]}")
+#             print(f"Overlap detected: {overlap_found}")
+            
+#             # Show actual overlap
+#             for sent in chunk_0_sentences:
+#                 if sent in chunk_1_text:
+#                     print(f"  Overlapping sentence: {sent}")
+# else:
+#     print("OPENAI_API_KEY not found in environment")
+
+
+def load_as13_to_chroma(
+    chroma_dir: str = "chroma_db_test",
+    collection_name: str = "apollo13_test",
+    chunk_size: int = 1000,
+    chunk_overlap: int = 200,
+    update_mode: str = "skip"
+) -> dict:
+    """
+    Load AS13_TEC.txt into ChromaDB.
+
+    Args:
+        chroma_dir: ChromaDB persist directory
+        collection_name: Name for the collection
+        chunk_size: Characters per chunk
+        chunk_overlap: Overlap between chunks
+        update_mode: 'skip', 'update', or 'replace'
+
+    Returns:
+        Dictionary with import statistics
+    """
+    from pathlib import Path
+    from embedding_pipeline import ChromaEmbeddingPipelineTextOnly
+
+    openai_key = os.environ.get('OPENAI_API_KEY')
+    if not openai_key:
+        raise ValueError("OPENAI_API_KEY not found in environment")
+
+    # Initialize pipeline
     pipeline = ChromaEmbeddingPipelineTextOnly(
         openai_api_key=openai_key,
-        chroma_persist_directory="./chroma_db_test",
-        collection_name="test_chunks",
-        chunk_size=100,
-        chunk_overlap=20
+        chroma_persist_directory=chroma_dir,
+        collection_name=collection_name,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
     )
-    
-    # Test 1: Short text (no chunking needed)
-    print("Test 1: Short text")
-    short_text = "This is a short sentence."
-    metadata = {
-        "mission": "test_mission",
-        "source": "test_source.txt",
-        "document_category": "test"
-    }
-    result = pipeline.chunk_text(short_text, metadata)
-    print(f"Input length: {len(short_text)}")
-    print(f"Number of chunks: {len(result)}")
-    print(f"Chunk 0: {result[0][0]}")
-    print(f"Metadata: {result[0][1]}\n")
-    
-    # Test 2: Long text with multiple sentences
-    print("Test 2: Long text with multiple sentences")
-    long_text = "The Apollo 11 mission was historic. It landed on the Moon. Neil Armstrong walked on the lunar surface. Buzz Aldrin joined him. Michael Collins orbited above. This was a tremendous achievement for humanity."
-    result = pipeline.chunk_text(long_text, metadata)
-    print(f"Input length: {len(long_text)}")
-    print(f"Number of chunks: {len(result)}")
-    for i, (chunk_text, chunk_meta) in enumerate(result):
-        print(f"Chunk {i}: {chunk_text}")
-        print(f"  Size: {chunk_meta['chunk_size']}, Index: {chunk_meta['chunk_index']}, Count: {chunk_meta['chunk_count']}")
-    print()
-    
-    # Test 3: Verify overlap between chunks
-    print("Test 3: Verify overlap between chunks")
-    if len(result) > 1:
-        chunk_0_text = result[0][0]
-        chunk_1_text = result[1][0]
-        
-        # Split into sentences and check overlap
-        chunk_0_sentences = chunk_0_text.split('. ')
-        chunk_1_sentences = chunk_1_text.split('. ')
-        
-        # Check if last sentence of chunk 0 appears in chunk 1
-        if chunk_0_sentences and chunk_1_sentences:
-            last_sent_chunk_0 = chunk_0_sentences[-1]
-            overlap_found = last_sent_chunk_0 in chunk_1_text
-            print(f"Last sentence of Chunk 0: {last_sent_chunk_0}")
-            print(f"First sentence of Chunk 1: {chunk_1_sentences[0]}")
-            print(f"Overlap detected: {overlap_found}")
-            
-            # Show actual overlap
-            for sent in chunk_0_sentences:
-                if sent in chunk_1_text:
-                    print(f"  Overlapping sentence: {sent}")
-else:
-    print("OPENAI_API_KEY not found in environment")
 
+    # Process AS13_TEC.txt
+    file_path = Path("AS13_TEC.txt")
+    if not file_path.exists():
+        raise FileNotFoundError(f"AS13_TEC.txt not found at {file_path.absolute()}")
+
+    # Read file with encoding fallback (AS13_TEC.txt uses Windows-1252)
+    content = None
+    for encoding in ['utf-8', 'cp1252', 'latin-1']:
+        try:
+            with open(file_path, 'r', encoding=encoding) as f:
+                content = f.read()
+            break
+        except UnicodeDecodeError:
+            continue
+
+    if not content:
+        raise ValueError(f"Could not decode {file_path} with any supported encoding")
+
+    # Build metadata manually since we're bypassing process_text_file
+    from datetime import datetime
+    metadata = {
+        'source': file_path.stem,
+        'file_path': str(file_path),
+        'file_type': 'text',
+        'content_type': 'full_text',
+        'mission': 'apollo_13',
+        'data_type': 'transcript',
+        'document_category': 'technical',
+        'file_size': len(content),
+        'processed_timestamp': datetime.now().isoformat()
+    }
+
+    documents = pipeline.chunk_text(content, metadata)
+
+    if not documents:
+        return {"error": "No documents extracted from file"}
+
+    # Add to collection
+    result = pipeline.add_documents_to_collection(
+        documents,
+        file_path,
+        update_mode=update_mode
+    )
+
+    # Return stats
+    return {
+        "file": str(file_path),
+        "chunks_created": len(documents),
+        "documents_added": result["added"],
+        "documents_updated": result["updated"],
+        "documents_skipped": result["skipped"],
+        "collection_total": pipeline.collection.count()
+    }
+
+load_as13_to_chroma()
