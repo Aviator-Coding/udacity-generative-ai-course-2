@@ -85,7 +85,8 @@ def initialize_rag_system(chroma_dir: str, collection_name: str):
 
 
 def retrieve_documents(collection:Collection, query: str, n_results: int = 3,
-                       mission_filter: Optional[str] = None) -> Optional[QueryResult]:
+                       mission_filter: Optional[str] = None,
+                       similarity_threshold: Optional[float] = None) -> Optional[QueryResult]:
     """Retrieve relevant documents from ChromaDB with optional filtering"""
 
     # DONE: Initialize filter variable to None (represents no filtering)
@@ -101,8 +102,32 @@ def retrieve_documents(collection:Collection, query: str, n_results: int = 3,
         # DONE: Apply conditional filter (None for no filtering, dictionary for specific filtering)
         where=filter,
         # DONE: Set maximum number of results to return
-        n_results=n_results
+        n_results=n_results,
+        # Include distances for similarity threshold filtering
+        include=["documents", "metadatas", "distances"]
     )
+
+    # Filter by similarity threshold if provided
+    distances = result.get("distances")
+    documents = result.get("documents")
+    metadatas = result.get("metadatas")
+    if similarity_threshold is not None and distances and documents and metadatas:
+        # ChromaDB returns distances where lower = more similar
+        # Filter out documents with distance > threshold
+        filtered_docs = []
+        filtered_metadatas = []
+        filtered_distances = []
+
+        for i, distance in enumerate(distances[0]):
+            if distance <= similarity_threshold:
+                filtered_docs.append(documents[0][i])
+                filtered_metadatas.append(metadatas[0][i])
+                filtered_distances.append(distance)
+
+        result["documents"] = [filtered_docs]
+        result["metadatas"] = [filtered_metadatas]
+        result["distances"] = [filtered_distances]
+
     # DONE: Return query results to caller
     return result
 

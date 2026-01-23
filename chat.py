@@ -47,11 +47,12 @@ def initialize_rag_system(chroma_dir: str, collection_name: str):
     except Exception as e:
         return None, False, str(e)
 
-def retrieve_documents(collection, query: str, n_results: int = 3, 
-                      mission_filter: Optional[str] = None) -> Optional[Dict]:
+def retrieve_documents(collection, query: str, n_results: int = 3,
+                      mission_filter: Optional[str] = None,
+                      similarity_threshold: Optional[float] = None) -> Optional[Dict]:
     """Retrieve relevant documents from ChromaDB with optional filtering"""
     try:
-        return rag_client.retrieve_documents(collection, query, n_results, mission_filter)
+        return rag_client.retrieve_documents(collection, query, n_results, mission_filter, similarity_threshold)
     except Exception as e:
         st.error(f"Error retrieving documents: {e}")
         return None
@@ -205,7 +206,15 @@ def main():
         # Retrieval settings
         st.subheader("🔍 Retrieval Settings")
         n_docs = st.slider("Documents to retrieve", 1, 10, 3)
-        
+        similarity_threshold = st.slider(
+            "Similarity Threshold",
+            min_value=0.0,
+            max_value=2.0,
+            value=1.0,
+            step=0.1,
+            help="Max distance allowed (lower = stricter). Documents with distance > threshold are filtered out."
+        )
+
         # Evaluation settings
         st.subheader("📊 Evaluation Settings")
         enable_evaluation = st.checkbox("Enable RAGAS Evaluation", value=RAGAS_AVAILABLE)
@@ -249,9 +258,10 @@ def main():
             with st.spinner("Searching documents and generating response..."):
                 # Retrieve relevant documents
                 docs_result = retrieve_documents(
-                    collection, 
-                    prompt, 
-                    n_docs
+                    collection,
+                    prompt,
+                    n_docs,
+                    similarity_threshold=similarity_threshold
                 )
                 
                 # Format context

@@ -279,7 +279,7 @@ Your implementation is successful when:
 ### **RAG System**
 - [X] Number of documents to retrieve
 - [X] Mission-specific filtering options
-- [ ] Similarity thresholds
+- [X] Similarity thresholds
 
 ### **Evaluation System**
 - [ ] Metric selection and weighting
