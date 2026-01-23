@@ -208,4 +208,4 @@ def load_as13_to_chroma(
         "collection_total": pipeline.collection.count()
     }
 
-load_as13_to_chroma()
+# load_as13_to_chroma()
