@@ -6,7 +6,11 @@ load_dotenv()
 
 
 def generate_response(openai_key: str, user_message: str, context: str,
-                      conversation_history: List[ResponseInputItemParam], model: str = "gpt-3.5-turbo") -> str:
+                      conversation_history: List[ResponseInputItemParam],
+                      model: str = "gpt-3.5-turbo",
+                      temperature: float = 0.1,
+                      max_tokens: int = 200,
+                      history_limit: int = 10) -> str:
     """Generate response using OpenAI with context"""
 
     # DONE: Define system prompt
@@ -27,8 +31,8 @@ Answer: [your answer] (Source: [mission name from context])
 
 If no relevant context was provided, say so clearly."""
 
-    # DONE: Add chat history
-    messages = conversation_history
+    # DONE: Add chat history (limit to recent messages)
+    messages = conversation_history[-history_limit:] if history_limit > 0 else conversation_history
     messages.append(
         {"role": "user", "content": user_prompt},
     )
@@ -41,8 +45,8 @@ If no relevant context was provided, say so clearly."""
         model=model,
         instructions=system_prompt,
         input=messages,
-        max_output_tokens=200,
-        temperature=0.1
+        max_output_tokens=max_tokens,
+        temperature=temperature
     )
 
     # DONE: Return response

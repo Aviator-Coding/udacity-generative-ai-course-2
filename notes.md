@@ -272,9 +272,9 @@ Your implementation is successful when:
 
 ### **LLM Client**
 - [X] Model selection (GPT-3.5-turbo, GPT-4)
-- [ ] Temperature and creativity settings (hardcoded at 0.1)
-- [ ] Maximum token limits (hardcoded at 200)
-- [ ] Conversation history length
+- [X] Temperature and creativity settings
+- [X] Maximum token limits
+- [X] Conversation history length
 
 ### **RAG System**
 - [X] Number of documents to retrieve

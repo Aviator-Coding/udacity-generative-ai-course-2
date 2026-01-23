@@ -61,11 +61,19 @@ def format_context(documents: List[str], metadatas: List[Dict]) -> str:
     
     return rag_client.format_context(documents, metadatas)
 
-def generate_response(openai_key, user_message: str, context: str, 
-                     conversation_history: List[Dict], model: str = "gpt-3.5-turbo") -> str:
+def generate_response(openai_key, user_message: str, context: str,
+                     conversation_history: List[Dict], model: str = "gpt-3.5-turbo",
+                     temperature: float = 0.1, max_tokens: int = 200,
+                     history_limit: int = 10) -> str:
     """Generate response using OpenAI with context"""
     try:
-        return llm_client.generate_response(openai_key, user_message, context, conversation_history, model)
+        return llm_client.generate_response(
+            openai_key, user_message, context, conversation_history,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            history_limit=history_limit
+        )
     except Exception as e:
         return f"Error generating response: {e}"
 
@@ -164,7 +172,36 @@ def main():
             options=["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"],
             help="Choose the OpenAI model for responses"
         )
-        
+
+        # Temperature slider
+        temperature = st.slider(
+            "Temperature",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.1,
+            step=0.1,
+            help="Controls creativity (0 = deterministic, 1 = creative)"
+        )
+
+        # Max tokens slider
+        max_tokens = st.slider(
+            "Max Tokens",
+            min_value=1,
+            max_value=500,
+            value=200,
+            step=20,
+            help="Maximum response length"
+        )
+
+        # History limit slider
+        history_limit = st.slider(
+            "History Limit",
+            min_value=0,
+            max_value=20,
+            value=10,
+            help="Number of recent messages to include (0 = unlimited)"
+        )
+
         # Retrieval settings
         st.subheader("🔍 Retrieval Settings")
         n_docs = st.slider("Documents to retrieve", 1, 10, 3)
@@ -229,11 +266,14 @@ def main():
                 
                 # Generate response
                 response = generate_response(
-                    openai_key, 
-                    prompt, 
-                    context, 
+                    openai_key,
+                    prompt,
+                    context,
                     st.session_state.messages[:-1],
-                    model_choice
+                    model_choice,
+                    temperature,
+                    max_tokens,
+                    history_limit
                 )
                 st.markdown(response)
                 
