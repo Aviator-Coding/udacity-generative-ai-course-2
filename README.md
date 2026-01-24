@@ -105,6 +105,12 @@ export OPENAI_API_KEY="your-api-key-here"
 # 3. Process documents (create embeddings)
 python embedding_pipeline.py --openai-key $OPENAI_API_KEY --data-path ./data
 
+# 3.1 Test with existing collection stats 
+python embedding_pipeline.py --openai-key $OPENAI_API_KEY --stats-only  
+
+# 3.2  Test a query to verify embeddings work 
+python embedding_pipeline.py --openai-key $OPENAI_API_KEY --stats-only --test-query "Apollo 11 mission" 
+
 # 4. Launch the chat interface
 streamlit run chat.py
 ```
@@ -143,20 +149,7 @@ streamlit run chat.py
 - Reference: https://stackoverflow.com/questions/2973436/regex-lookahead-lookbehind-and-atomic-groups
 - Vector search filtering concepts: https://www.pinecone.io/learn/vector-search-filtering/
 - Another lesson i leraned was to batch requests, i made a misstake resulting in 1000 embedding requests rather then batching them, i was
-really lucky that this ony cost a few cent.
-old code:
-```
-for doc_id, text, metadata in batch_data:                                                                                              
-      embedding = self.get_embedding(text) 
-```
-new code multiple texts:
-```
-OpenAI's API accepts multiple texts in a single request:                                                                               
-  response = openai_client.embeddings.create(                                                                                            
-      input=[text1, text2, text3, ...],                                                                               
-      model="text-embedding-3-small"                                                                                                     
-  )  
-```
+really lucky that this ony cost a few cent. 1000 request took like 15 minutes to create the embeddings.I created a new batch method which does it in about 50 requests.
 
 
 ### RAGAS Evaluator (`ragas_evaluator.py`)
