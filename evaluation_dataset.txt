@@ -1,3 +1,19 @@
+===============================================================================
+EXAMPLE QUESTIONS
+================================================================================
+
+
+User: when was the apollo 13 mission?
+AI: Answer: April 1970 (Source: Apollo 13)
+
+User: who was on the mission?
+AI: Answer: Swigert, Jr. was the Lunar Module Pilot, and Fred W. Haise, Jr. was the Unidentified crewmember on the Apollo 13 mission. (Source: Apollo 13)
+
+User: what was the root cause of the missionn failure
+AI: Answer: The root cause of the mission failure was a high pressure source and stowage problem in the OPS, leading to considerations of leaving them in the LM. (Source: Apollo 13)
+
+User:What was the timeline?
+AI: Answer: The timeline included a set of procedures starting at 6 hours and 30 minutes prior to EI, assuming LM power to MAIN B in the command module. It also included times of major events, configurations, switch settings, and other specific details. (Source: Apollo 13)
 
 ================================================================================
 RAGAS EVALUATION DEMO - Apollo 13 Technical Transcript
