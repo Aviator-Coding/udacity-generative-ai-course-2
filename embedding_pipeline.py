@@ -268,25 +268,52 @@ class ChromaEmbeddingPipelineTextOnly:
             logger.error(f"Error getting file documents: {e}")
             return []
 
-    def get_embedding(self, text: str) -> List[float]:
+    def get_embeddings_batch(self, texts: List[str], max_retries: int = 3) -> List[List[float]]:
         """
-        Get OpenAI embedding for text
+        Get OpenAI embeddings for multiple texts with retry logic
 
         Args:
-            text: Text to embed
+            texts: List of texts to embed
+            max_retries: Maximum retry attempts on rate limit errors
 
         Returns:
-            Embedding vector
+            List of embedding vectors in same order as input texts
         """
-        try:
-            response = self.openai_client.embeddings.create(
-                input=text,
-                model=self.embedding_model
-            )
-            return response.data[0].embedding
+        if not texts:
+            return []
 
-        except Exception as e:
-            logger.error(f"Error getting embeddings {e}")
+        for attempt in range(max_retries):
+            try:
+                response = self.openai_client.embeddings.create(
+                    input=texts,
+                    model=self.embedding_model
+                )
+                return [e.embedding for e in response.data]
+
+            except openai.RateLimitError as e:
+                if attempt < max_retries - 1:
+                    wait_time = (2 ** attempt) + 1  # Exponential backoff: 2, 3, 5 seconds
+                    logger.warning(f"Rate limit hit, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"Rate limit exceeded after {max_retries} retries")
+                    raise
+
+            except openai.APIError as e:
+                status_code = getattr(e, 'status_code', None)
+                if attempt < max_retries - 1 and status_code is not None and status_code >= 500:
+                    wait_time = (2 ** attempt) + 1
+                    logger.warning(f"API error {status_code}, retrying in {wait_time}s")
+                    time.sleep(wait_time)
+                else:
+                    raise
+
+        return []  # Should not reach here, but satisfy type checker
+
+    def get_embedding(self, text: str) -> List[float]:
+        """Get OpenAI embedding for a single text"""
+        embeddings = self.get_embeddings_batch([text])
+        return embeddings[0] if embeddings else []
 
     def generate_document_id(self, file_path: Path, metadata: Dict[str, Any]) -> str:
         """
@@ -518,11 +545,7 @@ class ChromaEmbeddingPipelineTextOnly:
                 if new_docs:
                     # Generate embeddings in batch for all new documents
                     texts = [text for _, text, _ in new_docs]
-                    embeddings_response = self.openai_client.embeddings.create(
-                        input=texts,
-                        model=self.embedding_model
-                    )
-                    embeddings = [e.embedding for e in embeddings_response.data]
+                    embeddings = self.get_embeddings_batch(texts)
 
                     to_add = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
                     for i, (doc_id, text, metadata) in enumerate(new_docs):
@@ -542,11 +565,7 @@ class ChromaEmbeddingPipelineTextOnly:
 
                 # Generate embeddings in batch for all documents
                 texts = [text for _, text, _ in batch_data]
-                embeddings_response = self.openai_client.embeddings.create(
-                    input=texts,
-                    model=self.embedding_model
-                )
-                embeddings = [e.embedding for e in embeddings_response.data]
+                embeddings = self.get_embeddings_batch(texts)
 
                 to_upsert = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
                 for i, (doc_id, text, metadata) in enumerate(batch_data):
@@ -566,11 +585,7 @@ class ChromaEmbeddingPipelineTextOnly:
             elif update_mode == 'replace':
                 # Generate embeddings in batch for all documents
                 texts = [text for _, text, _ in batch_data]
-                embeddings_response = self.openai_client.embeddings.create(
-                    input=texts,
-                    model=self.embedding_model
-                )
-                embeddings = [e.embedding for e in embeddings_response.data]
+                embeddings = self.get_embeddings_batch(texts)
 
                 to_add = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
                 for i, (doc_id, text, metadata) in enumerate(batch_data):
@@ -660,8 +675,8 @@ class ChromaEmbeddingPipelineTextOnly:
     def get_collection_info(self) -> Dict[str, Any]:
         """Get information about the ChromaDB collection"""
         return {
-            'name': self.collection.name,
-            'count': self.collection.count(),
+            'collection_name': self.collection.name,
+            'document_count': self.collection.count(),
             'metadata': self.collection.metadata
         }
 
