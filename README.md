@@ -1,101 +1,380 @@
+# NASA Intelligence Chat System
 
-Your Mission: Build a NASA Intelligence Chat System
-For this project, you'll step into the shoes of a NASA mission operations specialist. Your task is to build a Q&A system that can answer questions about some of NASA's most historic space missions. You'll be working with actual mission transcripts and technical documents from Apollo 11, Apollo 13, and the Challenger missions.
+A complete Retrieval-Augmented Generation (RAG) system for querying NASA's historic space mission documents.
 
-The goal is to create a tool that allows astronauts, researchers, or even a curious historian to ask a question in plain English—like "What problems did Apollo 13 encounter?"—and get an accurate, detailed answer sourced directly from NASA's own archives.
+## Project Overview
 
-To do this, you are going to build a complete Retrieval-Augmented Generation (RAG) system.
+Build a Q&A system that answers questions about NASA's most historic space missions using actual mission transcripts and technical documents from **Apollo 11**, **Apollo 13**, and the **Challenger** missions.
 
-The Project Blueprint
-You'll be working through a series of Python files, each with a specific job.
+> *Example: Ask "What problems did Apollo 13 encounter?" and get an accurate, detailed answer sourced directly from NASA's archives.*
 
-Here’s a high-level look at what you'll be building, piece by piece:
+---
 
-The Embedding Pipeline First, you'll take all those raw NASA text files and process them. You'll write code to break them into smaller, manageable chunks and then convert those chunks into numerical representations—or embeddings and store them in ChromaDB.
-The RAG Client This is the core of your retrieval system. You'll build the logic that takes a user's question, searches the ChromaDB database to find the most relevant document chunks, and then formats that information neatly to be used as context.
-The LLM Client Here, you'll connect to the OpenAI API. This component will take the user's question and the context from your RAG client and generate a helpful, human-readable answer.
-The RAGAS Evaluator How do you know if your RAG system is any good? You'll implement a real-time evaluation system using RAGAS.
-The Chat Application Finally, you'll bring everything together in an interactive chat interface using Streamlit.
-What You'll Be Able to Do After This
-By the time you finish, you will have built a complete, functioning AI application. You'll have demonstrated a whole set of valuable skills, including:
+## Project Architecture
 
-Building an end-to-end RAG system.
-Using vector databases like ChromaDB for semantic search.
-Integrating and prompting large language models for specific tasks.
-Evaluating the performance of an AI system with modern tools.
-This project is a fantastic piece to add to your portfolio. Ready to get started?
+| Component | File | Description |
+|-----------|------|-------------|
+| **Embedding Pipeline** | `embedding_pipeline.py` | Process NASA text files into chunks and store as embeddings in ChromaDB |
+| **RAG Client** | `rag_client.py` | Search ChromaDB for relevant document chunks and format as context |
+| **LLM Client** | `llm_client.py` | Connect to OpenAI API and generate answers using retrieved context |
+| **RAGAS Evaluator** | `ragas_evaluator.py` | Real-time evaluation of response quality (faithfulness, relevancy) |
+| **Chat Application** | `chat.py` | Interactive Streamlit interface bringing all components together |
 
-Project Assessment
-Your project will be assessed by mentors using a detailed rubric. On the following pages, you'll find the rubric. Familiarize yourself with the rubric and make sure to check your project against it before you submit it.
+---
+
+## Skills Demonstrated
+
+- Building an end-to-end RAG system
+- Using vector databases (ChromaDB) for semantic search
+- Integrating and prompting large language models
+- Evaluating AI system performance with modern tools
+
+---
+
+## Implementation Guide
+
+### Phase 1: Core Infrastructure
+
+#### 1. LLM Client (`llm_client.py`)
+
+Connect to the OpenAI API and create a NASA expert persona.
+
+**Tasks:**
+- Define a system prompt that tells the model to act as a NASA expert
+- Manage conversation history so the model can remember previous turns
+- Write the function that sends requests to OpenAI and returns responses
+
+---
+
+#### 2. RAG Client (`rag_client.py`)
+
+Build the retrieval system that searches for relevant document chunks.
+
+**Tasks:**
+- Connect to the ChromaDB backend
+- Implement semantic search to find the best matching document chunks
+- Format retrieved documents into a clean context string for the LLM
+
+---
+
+#### 3. Embedding Pipeline (`embedding_pipeline.py`)
+
+Process NASA text files and create the vector database.
+
+**Tasks:**
+- Implement a text chunking strategy with overlap
+- Use OpenAI API to generate embeddings for each chunk
+- Manage ChromaDB collection creation and population
+- Build a command-line interface for running the pipeline
+
+---
+
+### Phase 2: Evaluation and Interface
+
+#### 4. RAGAS Evaluator (`ragas_evaluator.py`)
+
+Implement real-time quality scoring for RAG responses.
+
+**Tasks:**
+- Integrate the RAGAS framework
+- Define evaluation metrics (faithfulness, answer relevancy, context precision)
+- Write the function that returns quality scores for each response
+
+---
+
+#### 5. Chat Application (`chat.py`)
+
+Create the interactive Streamlit interface.
+
+**Tasks:**
+- Build the chat interface for user questions
+- Integrate all components (RAG, LLM, evaluation)
+- Display real-time quality metrics in the interface
+
+---
+
+## Quick Start
+
+```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Set up your OpenAI API key
+export OPENAI_API_KEY="your-api-key-here"
+
+# 3. Process documents (create embeddings)
+python embedding_pipeline.py --openai-key $OPENAI_API_KEY --data-path ./data
+
+# 4. Launch the chat interface
+streamlit run chat.py
+```
+
+---
+
+## Submission Checklist
+
+- [ ] All TODO items implemented in all Python files
+- [ ] End-to-end testing completed (embedding → chat → evaluation)
+- [ ] Sample questions provided in `evaluation_dataset.txt`
+- [ ] All code is clean and documented
+- [ ] Project files zipped into a single archive
+
+---
+
+## Implementation Notes
+
+### LLM Client (`llm_client.py`)
+- I decided to use the Response API as it provides a more simplified interface and gives us more control over the model behavior
+- Documentation: https://platform.openai.com/docs/guides/migrate-to-responses?update-item-definitions=responses&update-multiturn=chat-completions
+
+### RAG Client (`rag_client.py`)
+- Decided to use Unix-style path detection with glob patterns (easier to adjust patterns)
+- Documentation: https://docs.python.org/3/library/glob.html
+
+- For `format_context`, I decided to use XML formatting. I created a test prompt (LLM Delimiter Format Benchmark) which instructs the LLM to evaluate different parsing methods and rate how certain it was about each format.
+- XML performed the best across multiple LLMs and providers. The extra tokens should be well spent.
+- I removed the indentation as it's just for human readability but saves tokens - the LLM parses the schematic structure fine without it.
+- Reference: https://community.openai.com/t/providing-context-to-the-chat-api-before-a-conversation/195853/6
+
+### Embedding Pipeline (`embedding_pipeline.py`)
+- Used the ChromaDB OpenAI integration documentation: https://docs.trychroma.com/integrations/embedding-models/openai
+- Disabled telemetry via settings: https://docs.trychroma.com/docs/overview/telemetry (no NASA system wants to leak docs)
+- For sentence splitting, I used regex `(?<=[.!?])` - this splits text at `.!?` characters. It may not be precise for all cases but works well for NASA documents.
+- Reference: https://stackoverflow.com/questions/2973436/regex-lookahead-lookbehind-and-atomic-groups
+- Vector search filtering concepts: https://www.pinecone.io/learn/vector-search-filtering/
+- Another lesson i leraned was to batch requests, i made a misstake resulting in 1000 embedding requests rather then batching them, i was
+really lucky that this ony cost a few cent.
+old code:
+```
+for doc_id, text, metadata in batch_data:                                                                                              
+      embedding = self.get_embedding(text) 
+```
+new code multiple texts:
+```
+OpenAI's API accepts multiple texts in a single request:                                                                               
+  response = openai_client.embeddings.create(                                                                                            
+      input=[text1, text2, text3, ...],                                                                               
+      model="text-embedding-3-small"                                                                                                     
+  )  
+```
 
 
+### RAGAS Evaluator (`ragas_evaluator.py`)
+- The RAGAS implementation was challenging at the beginning, but it provided a deeper understanding through experimentation.
+- Fun fact: At the beginning I got perfect answers and realized the model was hallucinating everything because the ChromaDB was missing data - this was a "shocking" discovery!
+- I learned a lot about these concepts:
+  - **Faithfulness** - Measures if response claims are supported by the retrieved context
+  - **ResponseRelevancy** - Measures if the answer addresses the user's question
+  - **LLMContextPrecisionWithoutReference** - Evaluates context relevance without needing ground truth
+- Documentation: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/
 
+---
 
-Clone the GitHub repository with the starter code
+## LLM Delimiter Format Benchmark
 
-Here's a step-by-step implemetation path you can follow.
+This benchmark tests how well different LLMs can parse and extract data from various delimiter formats. The same prompt was sent to three models to compare their parsing confidence and recommendations.
 
-Phase 1: Core Infrastructure
-This first phase is all about building the foundational components of your RAG system.
+### The Benchmark Prompt
 
-1. Implement the LLM Client (llm_client.py)
-Here, you'll connect to the OpenAI API. You'll learn how to write a good system prompt to give the AI its "persona" as a NASA expert. This component will take the user's question and the context from your RAG client and generate a helpful, human-readable answer.
-What You'll Do: Your first step is to create a connection to the OpenAI API. You'll write the code to send a user's question, along with any relevant context and conversation history, to an LLM like GPT-3.5 or GPT-4.
-Tasks:
-Define a system prompt that tells the model to act as a NASA expert.
-Manage conversation history so the model can remember previous turns.
-Write the function that sends the request to OpenAI and returns the model's response.
+```
+You are participating in a benchmark test to evaluate how well you can parse and extract data from different delimiter formats.
 
+For each of the 10 test cases below, you must:
+1. Extract these three fields: NAME, ROLE, TASK
+2. Rate your parsing confidence from 1-5 (5 = completely unambiguous, 1 = had to guess)
+3. Note any ambiguities or parsing challenges
 
-2. Build the RAG Client (rag_client.py)
-This is the core of your retrieval system. You'll build the logic that takes a user's question, searches the ChromaDB database to find the most relevant document chunks, and then formats that information neatly to be used as context.
-What You'll Do: Next, you'll build the "retrieval" part of the RAG system. This component is responsible for searching the vector database to find the most relevant documents to answer a user's question.
-Tasks:
-Connect to the ChromaDB backend.
-Implement the semantic search function that takes a question and finds the best matching document chunks.
-Format the retrieved documents into a clean context string that can be passed to the LLM.
-3. Create the Embedding Pipeline (embedding_pipeline.py)
-You'll take all those raw NASA text files and process them. You'll write code to break them into smaller, manageable chunks and then convert those chunks into numerical representations—or embeddings—using an OpenAI model. You will then store all of this in a specialized vector database called ChromaDB. This is the foundation of your system's "memory."
-What You'll Do: This is the most extensive part of the setup. You'll write a script that takes all the raw NASA .txt files, processes them, creates embeddings, and saves them into the ChromaDB database.
-Tasks:
-Implement a text chunking strategy to break large documents into smaller, more manageable pieces.
-Use the OpenAI API to generate embeddings for each text chunk.
-Manage the creation and population of collections within ChromaDB.
-Build a command-line interface so you can easily run this pipeline from your terminal.
-Phase 2: Evaluation and Interface
-Once the core system is built, you'll focus on evaluating its performance and creating a user-friendly interface.
+Respond in this exact format for each test:
 
-4. Develop the RAGAS Evaluator (ragas_evaluator.py)
-How do you know if your RAG system is any good? You'll implement a real-time evaluation system using a framework called RAGAS. This will automatically score your system's answers on metrics like faithfulness (Is it sticking to the facts?) and relevancy (Is the answer actually helpful?).
-What You'll Do: You'll build the system that scores how good your RAG system's answers are. This will give you real-time feedback on your system's quality.
-Key Tasks:
-Integrate the RAGAS framework.
-Define the evaluation metrics you want to use, such as answer relevancy and faithfulness.
-Write the function that takes a question, an answer, and the context and returns a set of quality scores.
-5. Build the Chat Application (chat.py)
-Finally, you'll bring everything together in an interactive chat interface using Streamlit. This is where your project comes to life! Users will be able to select different models, choose a mission to focus on, and see the evaluation scores for each answer in real-time.
-What You'll Do: You'll bring everything together into a single, interactive web application using Streamlit.
-Tasks:
-Build the chat interface where a user can type in questions.
-Integrate all the components you've built: the RAG client, the LLM client, and the RAGAS evaluator.
-Display the AI's answer and its real-time quality scores in the interface.
-Project Assessment
-Your project will be assessed by mentors using a detailed rubric. On the following pages, you'll find the rubric. Familiarize yourself with the rubric and make sure to check your project against it before you submit it.
+TEST [N] [FORMAT]:
+- Name: [extracted value]
+- Role: [extracted value]
+- Task: [extracted value]
+- Confidence: [1-5]/5
+- Notes: [any parsing challenges]
+```
 
-Submission Instructions
-When you are ready to submit your project, please follow these steps to make sure everything is included.
+<details>
+<summary><strong>View All 10 Test Cases</strong></summary>
 
-Submission Checklist
-Implement All TODO Items: Go through each of the Python files (llm_client.py, rag_client.py, embedding_pipeline.py, ragas_evaluator.py, and chat.py) and make sure you have completed all the TODO comments.
+#### TEST 1: XML TAGS
+```xml
+<user>
+  <name>Alice Chen</name>
+  <role>Senior DevOps Engineer</role>
+  <task>Deploy Kubernetes cluster with Rook-Ceph storage</task>
+</user>
+```
 
-End-to-End Testing: Before submitting, run the entire workflow to confirm that everything works together.
+#### TEST 2: TRIPLE HASHES
+```
+###NAME###
+Bob Martinez
+###ROLE###
+Database Administrator
+###TASK###
+Migrate PostgreSQL 14 to PostgreSQL 17 with pgvector
+###END###
+```
 
-First, run your embedding pipeline to process the documents.
-Then, launch the chat application and test it with several questions to make sure it responds correctly and displays the evaluation scores.
-Provide Sample Questions: In a text file called "evaluation_dataset.txt", Include a few sample questions that you used for testing and show the responses you expected the system to provide.
+#### TEST 3: JSON FORMAT
+```json
+{
+  "name": "Carol Wu",
+  "role": "ML Engineer",
+  "task": "Build MCP server for AWS Athena integration"
+}
+```
 
-Prepare Your Files:
+#### TEST 4: MARKDOWN HEADERS
+```markdown
+## Name
+David Park
 
-Make sure all your code is clean.
-Zip up all your project files, including your report, into a single archive.
-On the following pages, you'll find a submission button and instructions for zipping up your code and submitting it to mentors. We recommend you work in a Github repository, either in the Udacity workspace or on your local machine.
+## Role
+Platform Engineer
+
+## Task
+Configure FluxCD GitOps pipeline for production
+```
+
+#### TEST 5: TEXT LABELS WITH COLONS
+```
+NAME: Elena Volkov
+ROLE: Security Architect
+TASK: Implement zero-trust network architecture
+```
+
+#### TEST 6: TRIPLE DASHES (YAML-STYLE)
+```yaml
+---
+name: Frank Okonkwo
+---
+role: Data Engineer
+---
+task: Deploy TiDB Operator on Kubernetes cluster
+---
+```
+
+#### TEST 7: TRIPLE QUOTES
+```
+"""
+Name: Grace Kim
+Role: SRE Lead
+Task: Debug Redis cluster failover issues
+"""
+```
+
+#### TEST 8: NESTED XML (COMPLEX)
+```xml
+<request>
+  <context>
+    <environment>Production</environment>
+    <priority>High</priority>
+  </context>
+  <user>
+    <name>Henry Liu</name>
+    <role>Infrastructure Lead</role>
+  </user>
+  <task>
+    <description>Troubleshoot load balancer configuration</description>
+  </task>
+</request>
+```
+
+#### TEST 9: PIPE-SEPARATED
+```
+|NAME|ROLE|TASK|
+|Ivan Petrov|Backend Developer|Optimize API response times|
+```
+
+#### TEST 10: NATURAL LANGUAGE (STRESS TEST)
+```
+The engineer named Julia Santos, who currently works as a Cloud Architect, has been assigned to design the multi-region disaster recovery system for our infrastructure.
+```
+
+</details>
+
+---
+
+### Model Responses
+
+#### Claude Opus Results
+
+| Rank | Delimiter Type | Confidence | Best For | Limitations |
+|------|---------------|------------|----------|-------------|
+| 1 | **XML Tags** | 5.0/5 | Claude, complex/nested data | Verbose syntax |
+| 1 | **JSON** | 5.0/5 | Structured output, API integration | Less human-readable |
+| 3 | **Markdown Headers** | 4.0/5 | Documentation, human-readable | Can conflict with doc structure |
+| 3 | **Triple Hashes** | 4.0/5 | Section separation, simple prompts | No native nesting |
+| 5 | **Triple Dashes** | 3.5/5 | YAML-style, block separation | Can confuse with YAML frontmatter |
+| 5 | **Text Labels** | 3.5/5 | Simple, quick prompts | Weak boundaries |
+| 7 | **Triple Quotes** | 3.0/5 | Enclosing content blocks | No internal structure |
+| 8 | **Pipe-separated** | 3.0/5 | Tabular data only | Poor for text with pipes |
+| 9 | **Natural Language** | 2.0/5 | Quick informal prompts | Highly ambiguous |
+
+**Claude's Recommendation:** XML tags are the clear winner for Claude - Anthropic specifically trained Claude to recognize XML as a prompt organizing mechanism.
+
+---
+
+#### OpenAI GPT-4 Results
+
+| Test | Format | Confidence | Notes |
+|------|--------|------------|-------|
+| 1 | XML Tags | 5/5 | Clear XML tags; no ambiguity |
+| 2 | Triple Hashes | 5/5 | Explicit section delimiters |
+| 3 | JSON | 5/5 | Valid JSON with clear keys |
+| 4 | Markdown Headers | 5/5 | Headers clearly label each field |
+| 5 | Text Labels | 5/5 | Colon-separated labels are explicit |
+| 6 | YAML-Style | 5/5 | Clear despite repeated separators |
+| 7 | Triple Quotes | 5/5 | Labels inside quoted block remove ambiguity |
+| 8 | Nested XML | 4/5 | Required extracting nested element |
+| 9 | Pipe-Separated | 4/5 | Depends on header-to-column alignment |
+| 10 | Natural Language | 3/5 | Required semantic inference |
+
+---
+
+#### OpenAI GPT-3.5-Turbo Results
+
+| Test | Format | Confidence | Notes |
+|------|--------|------------|-------|
+| 1 | XML Tags | 5/5 | Straightforward and unambiguous |
+| 2 | Triple Hashes | 4/5 | Slight ambiguity with hash characters |
+| 3 | JSON | 5/5 | Clear structure |
+| 4 | Markdown Headers | 5/5 | Clear separation |
+| 5 | Text Labels | 5/5 | Easy field identification |
+| 6 | YAML-Style | 3/5 | Ambiguity between field and delimiter |
+| 7 | Triple Quotes | 4/5 | Required attention to enclosing quotes |
+| 8 | Nested XML | 4/5 | Added complexity but manageable |
+| 9 | Pipe-Separated | 5/5 | Easy extraction |
+| 10 | Natural Language | 3/5 | Ambiguity in free-form text |
+
+---
+
+### Comparison Summary
+
+| Format | Claude Opus | GPT-4 | GPT-3.5 | Average |
+|--------|-------------|-------|---------|---------|
+| XML Tags | 5.0 | 5.0 | 5.0 | **5.0** |
+| JSON | 5.0 | 5.0 | 5.0 | **5.0** |
+| Markdown Headers | 4.0 | 5.0 | 5.0 | 4.7 |
+| Text Labels | 3.5 | 5.0 | 5.0 | 4.5 |
+| Triple Hashes | 4.0 | 5.0 | 4.0 | 4.3 |
+| Nested XML | 5.0 | 4.0 | 4.0 | 4.3 |
+| Pipe-Separated | 3.0 | 4.0 | 5.0 | 4.0 |
+| Triple Quotes | 3.0 | 5.0 | 4.0 | 4.0 |
+| YAML-Style | 3.5 | 5.0 | 3.0 | 3.8 |
+| Natural Language | 2.0 | 3.0 | 3.0 | 2.7 |
+
+---
+
+### Benchmark Conclusion
+
+**XML and JSON are universally the most reliable formats across all models.**
+
+- Use **XML** for Claude-specific prompts and complex nested structures
+- Use **JSON** when output needs to be machine-parsed
+- Use **Text Labels with Colons** for simple, quick prompts
+- **Avoid Natural Language** for structured data extraction
+
+*Benchmark conducted: January 2026*

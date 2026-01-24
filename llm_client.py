@@ -13,12 +13,10 @@ def generate_response(openai_key: str, user_message: str, context: str,
                       history_limit: int = 10) -> str:
     """Generate response using OpenAI with context"""
 
-    # DONE: Define system prompt
     system_prompt = """You are a NASA expert. Answer questions using ONLY the provided context.
 - If context is provided, cite the specific mission/source from the document metadata
 - If context is empty or doesn't contain relevant information, say "I don't have information about that in my documents."
 - Never make up sources"""
-    # DONE: Set context in messages
     user_prompt = f"""Based on the following context, answer the question.
 
 Context:
@@ -31,16 +29,13 @@ Answer: [your answer] (Source: [mission name from context])
 
 If no relevant context was provided, say so clearly."""
 
-    # DONE: Add chat history (limit to recent messages)
     messages = conversation_history[-history_limit:] if history_limit > 0 else conversation_history
     messages.append(
         {"role": "user", "content": user_prompt},
     )
 
-    # DONE: Creaet OpenAI Client
     client = OpenAI(api_key=openai_key)
 
-    # DONE: Send request to OpenAI
     response = client.responses.create(
         model=model,
         instructions=system_prompt,
@@ -49,5 +44,4 @@ If no relevant context was provided, say so clearly."""
         temperature=temperature
     )
 
-    # DONE: Return response
     return response.output_text

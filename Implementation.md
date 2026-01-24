@@ -17,3 +17,17 @@ rag pipeline:
 - also use the settings to disable telemtry https://docs.trychroma.com/docs/overview/telemetry no nasa system want to leaks docs
 - for the sentence splitting i decided to use regex (?<=[.!?]) (https://stackoverflow.com/questions/2973436/regex-lookahead-lookbehind-and-atomic-groups) this splits the text at .!? it  may not be precise.
 - embeddings https://www.pinecone.io/learn/vector-search-filtering/
+
+ragas_evaluator:
+- The ragas implementation was challenging at the beginning but it gave a deeper understaning by playing with the text
+  Fun fact at the beginning i got perfect awnsers and realized that the model haluzinates everything the chroma db was missing
+  this was a "shocking" discovery.
+I learend al lot of these concepts;
+- Faithfulness - if response claims are supported by context                                                                    
+- ResponseRelevancy - measures if answer addresses the question using embedding similarity                                             
+- LLMContextPrecisionWithoutReference - evaluates context relevance without ground truth 
+These Key Documentation helped a lot:                                                                                                             
+  - https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/                                                                  
+  - https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/                                                     
+  - https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_precision/                                                
+  - https://langfuse.com/guides/cookbook/evaluation_of_rag_with_ragas 
