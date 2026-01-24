@@ -638,10 +638,12 @@ class ChromaEmbeddingPipelineTextOnly:
 
                 # Track per-mission stats
                 if mission not in stats['missions']:
-                    stats['missions'][mission] = {'files': 0, 'chunks': 0, 'added': 0}
+                    stats['missions'][mission] = {'files': 0, 'chunks': 0, 'added': 0, 'updated': 0, 'skipped': 0}
                 stats['missions'][mission]['files'] += 1
                 stats['missions'][mission]['chunks'] += len(documents)
                 stats['missions'][mission]['added'] += result['added']
+                stats['missions'][mission]['updated'] += result['updated']
+                stats['missions'][mission]['skipped'] += result['skipped']
 
                 logger.debug(f"Processed {file_path.name}: {result}")
 
@@ -663,7 +665,7 @@ class ChromaEmbeddingPipelineTextOnly:
             'metadata': self.collection.metadata
         }
 
-    def query_collection(self, query_text: str, n_results: int = 5) -> Dict[str, Any]:
+    def query_collection(self, query_text: str, n_results: int = 5):
         """
         Query the collection for testing
 
