@@ -1,79 +1,137 @@
 import chromadb
 from chromadb.config import Settings
-from typing import Dict, List, Optional
+from chromadb import Collection,QueryResult,Where
+from typing import Dict, List, Optional, TypedDict, Literal
 from pathlib import Path
+from datatypes import DbBuildInformation
+
 
 def discover_chroma_backends() -> Dict[str, Dict[str, str]]:
     """Discover available ChromaDB backends in the project directory"""
     backends = {}
     current_dir = Path(".")
-    
+
     # Look for ChromaDB directories
-    # TODO: Create list of directories that match specific criteria (directory type and name pattern)
+    chromadb_search_criteria = ("**/chroma*")
+    exclude_dirs = {".venv", "__pycache__", ".git"}
+    chroma_dirs = [
+        path for path in current_dir.glob(chromadb_search_criteria)
+        if path.is_dir()
+        and not any(excluded in path.parts for excluded in exclude_dirs)
+    ]
 
-    # TODO: Loop through each discovered directory
-        # TODO: Wrap connection attempt in try-except block for error handling
-        
-            # TODO: Initialize database client with directory path and configuration settings
-            
-            # TODO: Retrieve list of available collections from the database
-            
-            # TODO: Loop through each collection found
-                # TODO: Create unique identifier key combining directory and collection names
-                # TODO: Build information dictionary containing:
-                    # TODO: Store directory path as string
-                    # TODO: Store collection name
-                    # TODO: Create user-friendly display name
-                    # TODO: Get document count with fallback for unsupported operations
-                # TODO: Add collection information to backends dictionary
-        
-        # TODO: Handle connection or access errors gracefully
-            # TODO: Create fallback entry for inaccessible directories
-            # TODO: Include error information in display name with truncation
-            # TODO: Set appropriate fallback values for missing information
+    for chroma_dir in chroma_dirs:
+        try:
+            client = chromadb.PersistentClient(path=chroma_dir)
+            db_collections = client.list_collections()
+            for db_collection in db_collections:
+                unique_identifier = f"{chroma_dir.name}-{db_collection}"
+                try:
+                    doc_count = db_collection.count()
+                except:
+                    doc_count = 0
+                build_information: DbBuildInformation = {
+                    "directory": str(chroma_dir),
+                    "collection_name": db_collection.name,
+                    "display_name": f"{chroma_dir.name}/{db_collection.name}",
+                    "document_count": doc_count
+                }
 
-    # TODO: Return complete backends dictionary with all discovered collections
+                backends[unique_identifier] = build_information
+        except Exception as e:
+            unique_identifier = f"{chroma_dir.name}-error"
+            error_msg = str(e)[:50]
+            build_information: DbBuildInformation = {
+                "directory": str(chroma_dir),
+                "collection_name": "",
+                "display_name": f"{chroma_dir.name} (Error: {error_msg})",
+                "document_count": 0,
+            }
+            backends[unique_identifier] = build_information
+    return backends
+
 
 def initialize_rag_system(chroma_dir: str, collection_name: str):
     """Initialize the RAG system with specified backend (cached for performance)"""
 
-    # TODO: Create a chomadb persistentclient
-    # TODO: Return the collection with the collection_name
+    try:
+        client = chromadb.PersistentClient(path=chroma_dir)
+        collection = client.get_or_create_collection(collection_name)
+        return collection, True, None
+    except Exception as e:
+        return None, False, str(e)
 
-def retrieve_documents(collection, query: str, n_results: int = 3, 
-                      mission_filter: Optional[str] = None) -> Optional[Dict]:
+
+def retrieve_documents(collection:Collection, query: str, n_results: int = 3,
+                       mission_filter: Optional[str] = None,
+                       similarity_threshold: Optional[float] = None) -> Optional[QueryResult]:
     """Retrieve relevant documents from ChromaDB with optional filtering"""
 
-    # TODO: Initialize filter variable to None (represents no filtering)
+    filter:Optional[Where] = None
+    if mission_filter and mission_filter.lower() != "all":
+        filter= {"mission":mission_filter}
+    result = collection.query(
+        query_texts=query,
+        where=filter,
+        n_results=n_results,
+        # Include distances for similarity threshold filtering
+        include=["documents", "metadatas", "distances"]
+    )
 
-    # TODO: Check if filter parameter exists and is not set to "all" or equivalent
-    # TODO: If filter conditions are met, create filter dictionary with appropriate field-value pairs
+    # Filter by similarity threshold if provided
+    distances = result.get("distances")
+    documents = result.get("documents")
+    metadatas = result.get("metadatas")
+    if similarity_threshold is not None and distances and documents and metadatas:
+        # ChromaDB returns distances where lower = more similar
+        # Filter out documents with distance > threshold
+        filtered_docs = []
+        filtered_metadatas = []
+        filtered_distances = []
 
-    # TODO: Execute database query with the following parameters:
-        # TODO: Pass search query in the required format
-        # TODO: Set maximum number of results to return
-        # TODO: Apply conditional filter (None for no filtering, dictionary for specific filtering)
+        for i, distance in enumerate(distances[0]):
+            if distance <= similarity_threshold:
+                filtered_docs.append(documents[0][i])
+                filtered_metadatas.append(metadatas[0][i])
+                filtered_distances.append(distance)
 
-    # TODO: Return query results to caller
+        result["documents"] = [filtered_docs]
+        result["metadatas"] = [filtered_metadatas]
+        result["distances"] = [filtered_distances]
+
+    return result
+
 
 def format_context(documents: List[str], metadatas: List[Dict]) -> str:
     """Format retrieved documents into context"""
     if not documents:
         return ""
-    
-    # TODO: Initialize list with header text for context section
 
-    # TODO: Loop through paired documents and their metadata using enumeration
-        # TODO: Extract mission information from metadata with fallback value
-        # TODO: Clean up mission name formatting (replace underscores, capitalize)
-        # TODO: Extract source information from metadata with fallback value  
-        # TODO: Extract category information from metadata with fallback value
-        # TODO: Clean up category name formatting (replace underscores, capitalize)
-        
-        # TODO: Create formatted source header with index number and extracted information
-        # TODO: Add source header to context parts list
-        
-        # TODO: Check document length and truncate if necessary
-        # TODO: Add truncated or full document content to context parts list
 
-    # TODO: Join all context parts with newlines and return formatted string
+    context_part: List[str] = ["<context>"]
+    for idx, (doc, metadata) in enumerate(zip(documents, metadatas), start=1):
+        mission = metadata.get("mission", "Unknown Mission")
+        mission = mission.replace("_", " ").capitalize()
+        source = metadata.get("source", "Unknown Source")
+        category =  metadata.get("document_category", "Unknown Category")
+        category = category.replace("_", " ").capitalize()
+        header = f"[Index: {idx}] Mission: {mission} | Category: {category} | Source: {source}"
+        max_length = 1000
+        if len(doc) > max_length:
+            doc = doc[:max_length] + "..."
+
+        # -> See implementation Notes why this has been choosen
+        context_part.append(f"""<document index="{idx}">
+<header>{header}</header>
+<metadata>
+<mission>{mission}</mission>
+<category>{category}</category>
+<source>{source}</source>
+</metadata>
+<content>
+{doc}
+</content>
+</document>""")
+
+    context_part.append("</context>")
+    return "\n".join(context_part)

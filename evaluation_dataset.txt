@@ -1,0 +1,497 @@
+===============================================================================
+EXAMPLE QUESTIONS
+================================================================================
+
+
+User: when was the apollo 13 mission?
+AI: Answer: April 1970 (Source: Apollo 13)
+
+User: who was on the mission?
+AI: Answer: Swigert, Jr. was the Lunar Module Pilot, and Fred W. Haise, Jr. was the Unidentified crewmember on the Apollo 13 mission. (Source: Apollo 13)
+
+User: what was the root cause of the missionn failure
+AI: Answer: The root cause of the mission failure was a high pressure source and stowage problem in the OPS, leading to considerations of leaving them in the LM. (Source: Apollo 13)
+
+User:What was the timeline?
+AI: Answer: The timeline included a set of procedures starting at 6 hours and 30 minutes prior to EI, assuming LM power to MAIN B in the command module. It also included times of major events, configurations, switch settings, and other specific details. (Source: Apollo 13)
+
+================================================================================
+RAGAS EVALUATION DEMO - Apollo 13 Technical Transcript
+================================================================================
+
+
+################################################################################
+# ERROR HANDLING SCENARIOS
+################################################################################
+
+================================================================================
+TEST: Empty Contexts
+================================================================================
+
+QUESTION:
+  What problem occurred on Apollo 13?
+
+ANSWER:
+  The crew reported a main B bus undervolt after hearing a loud bang.
+
+CONTEXTS (0 chunks):
+
+SCORES:
+  Error: No contexts provided for evaluation
+
+
+################################################################################
+# HIGH FAITHFULNESS SCENARIOS (answers grounded in context)
+################################################################################
+
+================================================================================
+TEST: High Faithfulness - Direct Quote
+================================================================================
+
+QUESTION:
+  What did Commander Lovell report to Houston?
+
+ANSWER:
+  CDR 'Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.'
+
+CONTEXTS (7 chunks):
+  [1] LMP Okay, Houston - -
+  [2] CDR I believe we've had a problem here.
+  [3] CC This is Houston. Say again, please.
+  [4] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [5] CC Roger. MAIN B UNDERVOLT.
+  [6] CC Okay, stand by, 13. We're looking at it.
+  [7] LMP Okay. Right now, Houston, the voltage is - is looking good. And we had a pretty large bang associated with the CAUTION AND WARNING there. And as I recall, MAIN B was the one that had had an amp spike on it once before.
+
+SCORES:
+  Faithfulness:       1.0000
+  Response Relevancy: 0.4324
+  Context Precision:  0.6220
+
+================================================================================
+TEST: High Faithfulness - Voltage Readings
+================================================================================
+
+QUESTION:
+  What voltage readings were reported during the Apollo 13 crisis?
+
+ANSWER:
+  The crew reported a MAIN B BUS UNDERVOLT initially, then later a MAIN BUS A UNDERVOLT was also showing. They observed 25 volts on MAIN A and used BUS TIE BAT AC to help the voltage.
+
+CONTEXTS (6 chunks):
+  [1] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [2] LMP Okay. Right now, Houston, the voltage is - is looking good.
+  [3] CDR Yes. We got a MAIN BUS A UNDERVOLT now, too, showing.
+  [4] CC MAIN A UNDERVOLT.
+  [5] CMP Okay. Let me give you some reading ... in the interim to help MAIN A voltage. Jack. I've got BUS TIE AC on.
+  [6] CMP In the interim, to help out MAIN A voltage, I've got MAIN BUS TIE BAT AC on. Or would you rather accept the 25 volts we are seeing on MAIN A?
+
+SCORES:
+  Faithfulness:       1.0000
+  Response Relevancy: 0.4695
+  Context Precision:  0.7222
+
+================================================================================
+TEST: High Faithfulness - Launch Sequence
+================================================================================
+
+QUESTION:
+  What was the sequence of events during Apollo 13's launch?
+
+ANSWER:
+  The clock started running, followed by the yaw program, tower clearance, then yaw complete and roll program. Houston gave GO at 30 seconds, and the crew confirmed roll complete and pitching.
+
+CONTEXTS (15 chunks):
+  [1] CDR The clock is running.
+  [2] CMP Okay. P11, Jim.
+  [3] CDR Yaw program.
+  [4] CMP Clear the tower.
+  [5] CDR Yaw complete. Roll program.
+  [6] CC Houston, Roger. Roll.
+  [7] CC 13, Houston. GO at 30 seconds.
+  [8] CDR Roll complete, and we are pitching.
+  [9] CC Roger that. Stand by for mode I Bravo.
+  [10] CC MARK.
+  [11] CC I Bravo.
+  [12] CMP I Bravo.
+  [13] CDR RCS COMMAND.
+  [14] CC 13, Houston. GO at 1. We show the cabin relieving.
+  [15] CDR 13; Roger.
+
+SCORES:
+  Faithfulness:       0.8571
+  Response Relevancy: 0.6370
+  Context Precision:  0.0000
+
+
+################################################################################
+# LOW FAITHFULNESS SCENARIOS (hallucinated content)
+################################################################################
+
+================================================================================
+TEST: Low Faithfulness - Hallucinated Details
+================================================================================
+
+QUESTION:
+  What happened during the Apollo 13 incident?
+
+ANSWER:
+  The oxygen tank exploded due to a faulty thermostat, causing severe damage to the heat shield. The crew had to use the lunar module as a lifeboat and perform a manual course correction around the moon.
+
+CONTEXTS (8 chunks):
+  [1] LMP Okay, Houston - -
+  [2] CDR I believe we've had a problem here.
+  [3] CC This is Houston. Say again, please.
+  [4] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [5] CC Roger. MAIN B UNDERVOLT.
+  [6] CC Okay, stand by, 13. We're looking at it.
+  [7] LMP Okay. Right now, Houston, the voltage is - is looking good. And we had a pretty large bang associated with the CAUTION AND WARNING there. And as I recall, MAIN B was the one that had had an amp spike on it once before.
+  [8] CC Roger, Fred.
+
+SCORES:
+  Faithfulness:       0.0000
+  Response Relevancy: 0.3875
+  Context Precision:  0.0000
+
+================================================================================
+TEST: Low Faithfulness - Fabricated Quotes
+================================================================================
+
+QUESTION:
+  What did the crew say after the problem?
+
+ANSWER:
+  Commander Lovell declared 'This is a catastrophic emergency, we're losing all power!' and Houston responded 'Prepare for immediate abort procedures, this is a code red situation!'
+
+CONTEXTS (8 chunks):
+  [1] LMP Okay, Houston - -
+  [2] CDR I believe we've had a problem here.
+  [3] CC This is Houston. Say again, please.
+  [4] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [5] CC Roger. MAIN B UNDERVOLT.
+  [6] CC Okay, stand by, 13. We're looking at it.
+  [7] LMP Okay. Right now, Houston, the voltage is - is looking good. And we had a pretty large bang associated with the CAUTION AND WARNING there. And as I recall, MAIN B was the one that had had an amp spike on it once before.
+  [8] CC Roger, Fred.
+
+SCORES:
+  Faithfulness:       0.0000
+  Response Relevancy: 0.4058
+  Context Precision:  0.4762
+
+================================================================================
+TEST: Low Faithfulness - Wrong Attribution (CDR said it, not LMP)
+================================================================================
+
+QUESTION:
+  Who reported the problem to Houston?
+
+ANSWER:
+  The Lunar Module Pilot CDR first reported 'Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.' Houston initially missed the call and had to ask him to repeat it.
+
+CONTEXTS (8 chunks):
+  [1] LMP Okay, Houston - -
+  [2] CDR I believe we've had a problem here.
+  [3] CC This is Houston. Say again, please.
+  [4] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [5] CC Roger. MAIN B UNDERVOLT.
+  [6] CC Okay, stand by, 13. We're looking at it.
+  [7] LMP Okay. Right now, Houston, the voltage is - is looking good. And we had a pretty large bang associated with the CAUTION AND WARNING there. And as I recall, MAIN B was the one that had had an amp spike on it once before.
+  [8] CC Roger, Fred.
+
+SCORES:
+  Faithfulness:       0.5000
+  Response Relevancy: 0.3426
+  Context Precision:  0.6862
+
+
+################################################################################
+# HIGH RESPONSE RELEVANCY SCENARIOS (answers address the question)
+################################################################################
+
+================================================================================
+TEST: High Relevancy - Direct Answer
+================================================================================
+
+QUESTION:
+  When did the Apollo 13 crew first report a problem to Houston?
+
+ANSWER:
+  The crew first reported a problem when CDR said 'I believe we've had a problem here.' This was followed by a more detailed report when he specified it was a MAIN B BUS UNDERVOLT.
+
+CONTEXTS (8 chunks):
+  [1] LMP Okay, Houston - -
+  [2] CDR I believe we've had a problem here.
+  [3] CC This is Houston. Say again, please.
+  [4] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [5] CC Roger. MAIN B UNDERVOLT.
+  [6] CC Okay, stand by, 13. We're looking at it.
+  [7] LMP Okay. Right now, Houston, the voltage is - is looking good. And we had a pretty large bang associated with the CAUTION AND WARNING there. And as I recall, MAIN B was the one that had had an amp spike on it once before.
+  [8] CC Roger, Fred.
+
+SCORES:
+  Faithfulness:       0.7500
+  Response Relevancy: 0.6171
+  Context Precision:  0.6862
+
+================================================================================
+TEST: High Relevancy - Comprehensive Answer
+================================================================================
+
+QUESTION:
+  What electrical failures were observed during the Apollo 13 crisis?
+
+ANSWER:
+  Two main electrical failures were observed: First, a MAIN B BUS UNDERVOLT, followed by a MAIN BUS A UNDERVOLT. The crew attempted to stabilize MAIN A voltage using BUS TIE BAT AC, observing 25 volts on MAIN A.
+
+CONTEXTS (6 chunks):
+  [1] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [2] LMP Okay. Right now, Houston, the voltage is - is looking good.
+  [3] CDR Yes. We got a MAIN BUS A UNDERVOLT now, too, showing.
+  [4] CC MAIN A UNDERVOLT.
+  [5] CMP Okay. Let me give you some reading ... in the interim to help MAIN A voltage. Jack. I've got BUS TIE AC on.
+  [6] CMP In the interim, to help out MAIN A voltage, I've got MAIN BUS TIE BAT AC on. Or would you rather accept the 25 volts we are seeing on MAIN A?
+
+SCORES:
+  Faithfulness:       1.0000
+  Response Relevancy: 0.6434
+  Context Precision:  1.0000
+
+
+################################################################################
+# LOW RESPONSE RELEVANCY SCENARIOS (answers don't address question)
+################################################################################
+
+================================================================================
+TEST: Low Relevancy - Off-Topic Answer
+================================================================================
+
+QUESTION:
+  What voltage readings were observed during the crisis?
+
+ANSWER:
+  Apollo 13 launched on April 11, 1970, from Kennedy Space Center in Florida. The Saturn V rocket used for the mission was the same type used for the Apollo 11 moon landing. The crew consisted of three astronauts.
+
+CONTEXTS (6 chunks):
+  [1] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [2] LMP Okay. Right now, Houston, the voltage is - is looking good.
+  [3] CDR Yes. We got a MAIN BUS A UNDERVOLT now, too, showing.
+  [4] CC MAIN A UNDERVOLT.
+  [5] CMP Okay. Let me give you some reading ... in the interim to help MAIN A voltage. Jack. I've got BUS TIE AC on.
+  [6] CMP In the interim, to help out MAIN A voltage, I've got MAIN BUS TIE BAT AC on. Or would you rather accept the 25 volts we are seeing on MAIN A?
+
+SCORES:
+  Faithfulness:       0.5000
+  Response Relevancy: 0.1072
+  Context Precision:  0.0000
+
+================================================================================
+TEST: Low Relevancy - Tangential (describes crew, not Houston instructions)
+================================================================================
+
+QUESTION:
+  What instructions did Houston give to the Apollo 13 crew after the problem report?
+
+ANSWER:
+  Commander Lovell reported that they had a problem and specified it was a MAIN B BUS UNDERVOLT. The Lunar Module Pilot mentioned hearing a loud bang and recalled that MAIN B had an amp spike before.
+
+CONTEXTS (8 chunks):
+  [1] LMP Okay, Houston - -
+  [2] CDR I believe we've had a problem here.
+  [3] CC This is Houston. Say again, please.
+  [4] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [5] CC Roger. MAIN B UNDERVOLT.
+  [6] CC Okay, stand by, 13. We're looking at it.
+  [7] LMP Okay. Right now, Houston, the voltage is - is looking good. And we had a pretty large bang associated with the CAUTION AND WARNING there. And as I recall, MAIN B was the one that had had an amp spike on it once before.
+  [8] CC Roger, Fred.
+
+SCORES:
+  Faithfulness:       0.8000
+  Response Relevancy: 0.4665
+  Context Precision:  0.2679
+
+
+################################################################################
+# HIGH CONTEXT PRECISION SCENARIOS (relevant context chunks)
+################################################################################
+
+================================================================================
+TEST: High Context Precision - All Relevant Technical Context
+================================================================================
+
+QUESTION:
+  What electrical issues were reported on Apollo 13?
+
+ANSWER:
+  Multiple bus undervolt conditions were reported, affecting both MAIN A and MAIN B buses, with attempts to stabilize using bus ties.
+
+CONTEXTS (6 chunks):
+  [1] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [2] LMP Okay. Right now, Houston, the voltage is - is looking good.
+  [3] CDR Yes. We got a MAIN BUS A UNDERVOLT now, too, showing.
+  [4] CC MAIN A UNDERVOLT.
+  [5] CMP Okay. Let me give you some reading ... in the interim to help MAIN A voltage. Jack. I've got BUS TIE AC on.
+  [6] CMP In the interim, to help out MAIN A voltage, I've got MAIN BUS TIE BAT AC on. Or would you rather accept the 25 volts we are seeing on MAIN A?
+
+SCORES:
+  Faithfulness:       1.0000
+  Response Relevancy: 0.3375
+  Context Precision:  0.0000
+
+
+################################################################################
+# LOW CONTEXT PRECISION SCENARIOS (irrelevant context chunks)
+################################################################################
+
+================================================================================
+TEST: Low Context Precision - Irrelevant TLI/Water Context
+================================================================================
+
+QUESTION:
+  What voltage problems occurred on Apollo 13?
+
+ANSWER:
+  The spacecraft experienced MAIN B BUS UNDERVOLT followed by MAIN A UNDERVOLT.
+
+CONTEXTS (9 chunks):
+  [1] CC Apollo 13, Houston. We have your TLI PAD ready to copy.
+  [2] CMP Stand by. Ready to copy.
+  [3] CC Roger. TLI, SPS/G&N: 36691, minus 157, plus 163.
+  [4] CC NOUN 33, 002 50 3799 plus 10780 minus 04529 plus 04125.
+  [5] CC Roll 180, pitch 343, yaw 010.
+  [6] LMP Houston, I can see some water floating around in the cabin.
+  [7] CC Copy that. Any estimate on the quantity?
+  [8] LMP Looks like a few drops. No concern at the moment.
+  [9] CC Roger. Keep us posted if it increases.
+
+SCORES:
+  Faithfulness:       0.0000
+  Response Relevancy: 0.5273
+  Context Precision:  0.0000
+
+================================================================================
+TEST: Low Context Precision - Wrong Time (splashdown for crisis question)
+================================================================================
+
+QUESTION:
+  What happened during the Apollo 13 crisis?
+
+ANSWER:
+  Commander Lovell reported 'Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.'
+
+CONTEXTS (7 chunks):
+  [1] R Apollo 13 and Recovery passing through 1000 feet.
+  [2] IWO Iwo Jima; Roger.
+  [3] R Through 500 feet.
+  [4] S-1 Swim 1 on station.
+  [5] S-2 - - 2 is on station.
+  [6] P-1 Photo 1's on station. Photo 1 observes splashdown at this time.
+  [7] P-1 Photo-1. Splashdown at this time. The three chutes are displaced. They're in the water.
+
+SCORES:
+  Faithfulness:       0.0000
+  Response Relevancy: 0.5225
+  Context Precision:  0.0000
+
+
+################################################################################
+# COMBINED SCENARIOS
+################################################################################
+
+================================================================================
+TEST: PERFECT SCENARIO - Faithful, Relevant, Precise Context
+================================================================================
+
+QUESTION:
+  What exactly did the Apollo 13 crew say when they reported the problem to Houston?
+
+ANSWER:
+  Commander Lovell first said 'I believe we've had a problem here.' Houston asked him to repeat, and he clarified: 'Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.' Houston acknowledged with 'Roger. MAIN B UNDERVOLT.'
+
+CONTEXTS (8 chunks):
+  [1] LMP Okay, Houston - -
+  [2] CDR I believe we've had a problem here.
+  [3] CC This is Houston. Say again, please.
+  [4] CDR Houston, we've had a problem. We've had a MAIN B BUS UNDERVOLT.
+  [5] CC Roger. MAIN B UNDERVOLT.
+  [6] CC Okay, stand by, 13. We're looking at it.
+  [7] LMP Okay. Right now, Houston, the voltage is - is looking good. And we had a pretty large bang associated with the CAUTION AND WARNING there. And as I recall, MAIN B was the one that had had an amp spike on it once before.
+  [8] CC Roger, Fred.
+
+SCORES:
+  Faithfulness:       0.7500
+  Response Relevancy: 0.6139
+  Context Precision:  0.6862
+
+================================================================================
+TEST: POOR SCENARIO - Hallucinated, Irrelevant Context
+================================================================================
+
+QUESTION:
+  What voltage problems occurred during the Apollo 13 crisis?
+
+ANSWER:
+  The spacecraft suffered from thermal runaway in the fuel cells due to improper insulation. Mission control had to perform emergency procedures to prevent complete power failure. The astronauts manually rewired the backup systems.
+
+CONTEXTS (5 chunks):
+  [1] CC Apollo 13, Houston. We have your TLI PAD ready to copy.
+  [2] CMP Stand by. Ready to copy.
+  [3] CC Roger. TLI, SPS/G&N: 36691, minus 157, plus 163.
+  [4] CC NOUN 33, 002 50 3799 plus 10780 minus 04529 plus 04125.
+  [5] CC Roll 180, pitch 343, yaw 010.
+
+SCORES:
+  Faithfulness:       0.0000
+  Response Relevancy: 0.4377
+  Context Precision:  0.0000
+
+
+################################################################################
+# EDGE CASES
+################################################################################
+
+================================================================================
+TEST: Edge Case - Minimal Context (single chunk)
+================================================================================
+
+QUESTION:
+  What did Commander Lovell say?
+
+ANSWER:
+  He said they had a problem.
+
+CONTEXTS (1 chunks):
+  [1] CDR Houston, we've had a problem.
+
+SCORES:
+  Faithfulness:       0.0000
+  Response Relevancy: 0.0000
+  Context Precision:  1.0000
+
+================================================================================
+TEST: Edge Case - Technical Acronyms (PGNCS, RCS, CSM)
+================================================================================
+
+QUESTION:
+  What systems showed problems according to the acronyms mentioned?
+
+ANSWER:
+  The PGNCS (Primary guidance, navigation, and control system) showed a warning light. The RCS (Reaction control system) HELIUM indicators showed barber pole readings on positions B and D.
+
+CONTEXTS (6 chunks):
+  [1] CDR And, Houston, we had a RESTART on our computer and we had a PGNCS light and the RESTART RESET.
+  [2] CDR Okay. And we're looking at our SERVICE MODULE RCS HELIUM 1. We have B is barber poled and D is barber poled.
+  [3] CDR RCS COMMAND.
+  [4] PGNCS - Primary guidance, navigation, and control system (CM)
+  [5] RCS - Reaction control system
+  [6] CSM - Command and service module
+
+SCORES:
+  Faithfulness:       0.6667
+  Response Relevancy: 0.3339
+  Context Precision:  0.8667
+
+
+================================================================================
+EVALUATION COMPLETE
+================================================================================
+

@@ -47,11 +47,12 @@ def initialize_rag_system(chroma_dir: str, collection_name: str):
     except Exception as e:
         return None, False, str(e)
 
-def retrieve_documents(collection, query: str, n_results: int = 3, 
-                      mission_filter: Optional[str] = None) -> Optional[Dict]:
+def retrieve_documents(collection, query: str, n_results: int = 3,
+                      mission_filter: Optional[str] = None,
+                      similarity_threshold: Optional[float] = None) -> Optional[Dict]:
     """Retrieve relevant documents from ChromaDB with optional filtering"""
     try:
-        return rag_client.retrieve_documents(collection, query, n_results, mission_filter)
+        return rag_client.retrieve_documents(collection, query, n_results, mission_filter, similarity_threshold)
     except Exception as e:
         st.error(f"Error retrieving documents: {e}")
         return None
@@ -61,11 +62,19 @@ def format_context(documents: List[str], metadatas: List[Dict]) -> str:
     
     return rag_client.format_context(documents, metadatas)
 
-def generate_response(openai_key, user_message: str, context: str, 
-                     conversation_history: List[Dict], model: str = "gpt-3.5-turbo") -> str:
+def generate_response(openai_key, user_message: str, context: str,
+                     conversation_history: List[Dict], model: str = "gpt-3.5-turbo",
+                     temperature: float = 0.1, max_tokens: int = 200,
+                     history_limit: int = 10) -> str:
     """Generate response using OpenAI with context"""
     try:
-        return llm_client.generate_response(openai_key, user_message, context, conversation_history, model)
+        return llm_client.generate_response(
+            openai_key, user_message, context, conversation_history,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            history_limit=history_limit
+        )
     except Exception as e:
         return f"Error generating response: {e}"
 
@@ -164,11 +173,48 @@ def main():
             options=["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"],
             help="Choose the OpenAI model for responses"
         )
-        
+
+        # Temperature slider
+        temperature = st.slider(
+            "Temperature",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.1,
+            step=0.1,
+            help="Controls creativity (0 = deterministic, 1 = creative)"
+        )
+
+        # Max tokens slider
+        max_tokens = st.slider(
+            "Max Tokens",
+            min_value=1,
+            max_value=500,
+            value=200,
+            step=20,
+            help="Maximum response length"
+        )
+
+        # History limit slider
+        history_limit = st.slider(
+            "History Limit",
+            min_value=0,
+            max_value=20,
+            value=10,
+            help="Number of recent messages to include (0 = unlimited)"
+        )
+
         # Retrieval settings
         st.subheader("🔍 Retrieval Settings")
         n_docs = st.slider("Documents to retrieve", 1, 10, 3)
-        
+        similarity_threshold = st.slider(
+            "Similarity Threshold",
+            min_value=0.0,
+            max_value=2.0,
+            value=1.0,
+            step=0.1,
+            help="Max distance allowed (lower = stricter). Documents with distance > threshold are filtered out."
+        )
+
         # Evaluation settings
         st.subheader("📊 Evaluation Settings")
         enable_evaluation = st.checkbox("Enable RAGAS Evaluation", value=RAGAS_AVAILABLE)
@@ -212,31 +258,37 @@ def main():
             with st.spinner("Searching documents and generating response..."):
                 # Retrieve relevant documents
                 docs_result = retrieve_documents(
-                    collection, 
-                    prompt, 
-                    n_docs
+                    collection,
+                    prompt,
+                    n_docs,
+                    similarity_threshold=similarity_threshold
                 )
                 
                 # Format context
                 context = ""
                 contexts_list = []
-                if docs_result and docs_result.get("documents"):
+                if docs_result and docs_result.get("documents") and docs_result["documents"][0]:
                     context = format_context(docs_result["documents"][0], docs_result["metadatas"][0])
                     contexts_list = docs_result["documents"][0]
                     st.session_state.last_contexts = contexts_list
+                else:
+                    st.warning("No relevant documents found. Response generated from general knowledge.")
                 
                 # Generate response
                 response = generate_response(
-                    openai_key, 
-                    prompt, 
-                    context, 
+                    openai_key,
+                    prompt,
+                    context,
                     st.session_state.messages[:-1],
-                    model_choice
+                    model_choice,
+                    temperature,
+                    max_tokens,
+                    history_limit
                 )
                 st.markdown(response)
                 
-                # Evaluate response quality if enabled
-                if enable_evaluation and RAGAS_AVAILABLE:
+                # Evaluate response quality if enabled (only when contexts exist)
+                if enable_evaluation and RAGAS_AVAILABLE and contexts_list:
                     with st.spinner("Evaluating response quality..."):
                         evaluation_scores = evaluate_response_quality(
                             prompt, 
