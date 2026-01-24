@@ -88,76 +88,81 @@ class ChromaEmbeddingPipelineTextOnly:
         )
 
 
-    def chunk_text(self, text: str, metadata: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:
-        """
-        Split text into chunks with metadata
-
-        Args:
-            text: Text to chunk
-            metadata: Base metadata for the text
-
-        Returns:
-            List of (chunk_text, chunk_metadata) tuples
-        """
-
-        if len(text) <= self.chunk_size:
-            chunk_metadata = metadata.copy()
-            chunk_metadata.update({
-                'chunk_index': 0,
-                'chunk_count': 1,
-                'chunk_size': len(text)
-            })
-            return [(text, chunk_metadata)]
-
-        chunks: List[Tuple[str, Dict[str, Any]]] = []
-        current_size = 0
-        current_chunk = []
-
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-
-        # Build chunks by accumulating sentences
-        for sentence in sentences:
-            # If adding this sentence exceeds chunk_size, save current chunk
-            if current_size + len(sentence) > self.chunk_size and current_chunk:
-                # Save completed chunk with metadata
-                chunk_text = ' '.join(current_chunk)
-                chunk_metadata = metadata.copy()
-                chunk_metadata.update({
-                    'chunk_index': len(chunks),
-                    'chunk_size': len(chunk_text),
-                    'chunk_count': 0
-                })
-                chunks.append((chunk_text, chunk_metadata))
-
-                # Create overlap by keeping end sentences from current chunk
-                overlap_text = ' '.join(current_chunk)
-                while len(overlap_text) > self.chunk_overlap and len(current_chunk) > 1:
-                    current_chunk.pop(0)
-                    overlap_text = ' '.join(current_chunk)
-
-                # Reset size to overlap size for next chunk
-                current_size = len(overlap_text)
-
-            # Add sentence to current chunk
-            current_chunk.append(sentence)
-            current_size += len(sentence) + 1
-
-        # Add final chunk if it has content
-        if current_chunk:
-            chunk_text = ' '.join(current_chunk)
-            chunk_metadata = metadata.copy()
-            chunk_metadata.update({
-                'chunk_index': len(chunks),
-                'chunk_size': len(chunk_text),
-                'chunk_count': 0
-            })
-            chunks.append((chunk_text, chunk_metadata))
-
-        # Update all chunks with total chunk count
-        for _, chunk_meta in chunks:
-            chunk_meta['chunk_count'] = len(chunks)
-
-        return chunks
+    def chunk_text(self, text: str, metadata: Dict[str, Any]) -> List[Tuple[str, Dict[str, Any]]]:                                         
+      """                                                                                                                                
+      Split text into chunks with metadata                                                                                               
+                                                                                                                                         
+      Args:                                                                                                                              
+          text: Text to chunk                                                                                                            
+          metadata: Base metadata for the text                                                                                           
+                                                                                                                                         
+      Returns:                                                                                                                           
+          List of (chunk_text, chunk_metadata) tuples                                                                                    
+      """                                                                                                                                
+                                                                                                                                         
+      if len(text) <= self.chunk_size:                                                                                                   
+          chunk_metadata = metadata.copy()                                                                                               
+          chunk_metadata.update({                                                                                                        
+              'chunk_index': 0,                                                                                                          
+              'chunk_count': 1,                                                                                                          
+              'chunk_size': len(text)                                                                                                    
+          })                                                                                                                             
+          return [(text, chunk_metadata)]                                                                                                
+                                                                                                                                         
+      chunks: List[Tuple[str, Dict[str, Any]]] = []                                                                                      
+      current_size = 0                                                                                                                   
+      current_chunk = []                                                                                                                 
+                                                                                                                                         
+      sentences = re.split(r'(?<=[.!?])\s+', text)                                                                                       
+                                                                                                                                         
+      # Build chunks by accumulating sentences                                                                                           
+      for sentence in sentences:                                                                                                         
+          # Calculate the size if we add this sentence (including space if not first)                                                    
+          additional_size = len(sentence) + (1 if current_chunk else 0)                                                                  
+                                                                                                                                         
+          # If adding this sentence exceeds chunk_size, save current chunk                                                               
+          if current_size + additional_size > self.chunk_size and current_chunk:                                                         
+              # Save completed chunk with metadata                                                                                       
+              chunk_text = ' '.join(current_chunk)                                                                                       
+              chunk_metadata = metadata.copy()                                                                                           
+              chunk_metadata.update({                                                                                                    
+                  'chunk_index': len(chunks),                                                                                            
+                  'chunk_size': len(chunk_text),                                                                                         
+                  'chunk_count': 0                                                                                                       
+              })                                                                                                                         
+              chunks.append((chunk_text, chunk_metadata))                                                                                
+                                                                                                                                         
+              # Create overlap by keeping end sentences from current chunk                                                               
+              overlap_text = ' '.join(current_chunk)                                                                                     
+              while len(overlap_text) > self.chunk_overlap and len(current_chunk) > 1:                                                   
+                  current_chunk.pop(0)                                                                                                   
+                  overlap_text = ' '.join(current_chunk)                                                                                 
+                                                                                                                                         
+              # Reset size to overlap size for next chunk                                                                                
+              current_size = len(overlap_text)                                                                                           
+                                                                                                                                         
+          # Add sentence to current chunk                                                                                                
+          if current_chunk:                                                                                                              
+              current_size += 1  # space before this sentence                                                                            
+          current_chunk.append(sentence)                                                                                                 
+          current_size += len(sentence)                                                                                                  
+                                                                                                                                         
+      # Add final chunk if it has content                                                                                                
+      if current_chunk:                                                                                                                  
+          chunk_text = ' '.join(current_chunk)                                                                                           
+          chunk_metadata = metadata.copy()                                                                                               
+          chunk_metadata.update({                                                                                                        
+              'chunk_index': len(chunks),                                                                                                
+              'chunk_size': len(chunk_text),                                                                                             
+              'chunk_count': 0                                                                                                           
+          })                                                                                                                             
+          chunks.append((chunk_text, chunk_metadata))                                                                                    
+                                                                                                                                         
+      # Update all chunks with total chunk count                                                                                         
+      for _, chunk_meta in chunks:                                                                                                       
+          chunk_meta['chunk_count'] = len(chunks)                                                                                        
+                                                                                                                                         
+      return chunks
 
     def check_document_exists(self, doc_id: str) -> bool:
         """
@@ -511,14 +516,20 @@ class ChromaEmbeddingPipelineTextOnly:
                 stats['skipped'] += len(existing_ids_set)
 
                 if new_docs:
-                    # Generate embeddings only for new documents
+                    # Generate embeddings in batch for all new documents
+                    texts = [text for _, text, _ in new_docs]
+                    embeddings_response = self.openai_client.embeddings.create(
+                        input=texts,
+                        model=self.embedding_model
+                    )
+                    embeddings = [e.embedding for e in embeddings_response.data]
+
                     to_add = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
-                    for doc_id, text, metadata in new_docs:
-                        embedding = self.get_embedding(text)
+                    for i, (doc_id, text, metadata) in enumerate(new_docs):
                         to_add['ids'].append(doc_id)
                         to_add['documents'].append(text)
                         to_add['metadatas'].append(metadata)
-                        to_add['embeddings'].append(embedding)
+                        to_add['embeddings'].append(embeddings[i])
 
                     self.collection.add(**to_add)
                     stats['added'] += len(to_add['ids'])
@@ -529,14 +540,20 @@ class ChromaEmbeddingPipelineTextOnly:
                 existing_result = self.collection.get(ids=all_ids)
                 existing_ids_set = set(existing_result['ids'])
 
-                # Generate embeddings for all documents
+                # Generate embeddings in batch for all documents
+                texts = [text for _, text, _ in batch_data]
+                embeddings_response = self.openai_client.embeddings.create(
+                    input=texts,
+                    model=self.embedding_model
+                )
+                embeddings = [e.embedding for e in embeddings_response.data]
+
                 to_upsert = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
-                for doc_id, text, metadata in batch_data:
-                    embedding = self.get_embedding(text)
+                for i, (doc_id, text, metadata) in enumerate(batch_data):
                     to_upsert['ids'].append(doc_id)
                     to_upsert['documents'].append(text)
                     to_upsert['metadatas'].append(metadata)
-                    to_upsert['embeddings'].append(embedding)
+                    to_upsert['embeddings'].append(embeddings[i])
 
                 # Use upsert for true batch add+update
                 self.collection.upsert(**to_upsert)
@@ -547,13 +564,20 @@ class ChromaEmbeddingPipelineTextOnly:
 
             # For replace mode: just add (already deleted existing above)
             elif update_mode == 'replace':
+                # Generate embeddings in batch for all documents
+                texts = [text for _, text, _ in batch_data]
+                embeddings_response = self.openai_client.embeddings.create(
+                    input=texts,
+                    model=self.embedding_model
+                )
+                embeddings = [e.embedding for e in embeddings_response.data]
+
                 to_add = {'ids': [], 'documents': [], 'metadatas': [], 'embeddings': []}
-                for doc_id, text, metadata in batch_data:
-                    embedding = self.get_embedding(text)
+                for i, (doc_id, text, metadata) in enumerate(batch_data):
                     to_add['ids'].append(doc_id)
                     to_add['documents'].append(text)
                     to_add['metadatas'].append(metadata)
-                    to_add['embeddings'].append(embedding)
+                    to_add['embeddings'].append(embeddings[i])
 
                 self.collection.add(**to_add)
                 stats['added'] += len(to_add['ids'])
