@@ -117,11 +117,85 @@ streamlit run chat.py
 
 ---
 
+## Evaluation Tools
+
+### Batch Evaluation (`evaluation_dataset.py`)
+
+Run the full RAG pipeline on a set of test questions and compute RAGAS metrics.
+
+**What it does:**
+- Loads test questions from `test_questions.json`
+- For each question: retrieves documents → generates response → evaluates quality
+- Computes three metrics: Faithfulness, Response Relevancy, Context Precision
+- Prints per-question results and aggregate statistics
+
+**Usage:**
+```bash
+python evaluation_dataset.py
+```
+
+**Test Questions Format** (`test_questions.json`):
+```json
+[
+  {"question": "What did the crew report about the oxygen tank pressure readings?"},
+  {"question": "Who was on the Apollo 13 mission?"}
+]
+```
+
+**Example Output:**
+```
+Processing question 1/5: What did the crew report about the oxygen tank pressure readings?
+  Faithfulness=0.85, Relevancy=0.92, Precision=0.78
+
+AGGREGATE SUMMARY
+Total Questions: 5
+Successfully Evaluated: 5
+Faithfulness         Mean=0.82, Min=0.75, Max=0.90
+Response Relevancy   Mean=0.88, Min=0.80, Max=0.95
+Context Precision    Mean=0.76, Min=0.70, Max=0.85
+```
+
+---
+
+### End-to-End Test (`evaluation_e2e.py`)
+
+Test multi-turn conversation handling and context preservation.
+
+**What it does:**
+- Verifies the NASA expert system prompt contains required elements
+- Tests that conversation history is properly maintained across turns
+- Validates that follow-up questions can reference prior context
+
+**Usage:**
+```bash
+python evaluation_e2e.py
+```
+
+**Example Output:**
+```
+MULTI-TURN CONVERSATION TEST
+1. SYSTEM PROMPT VERIFICATION:
+   ✓ System prompt defines NASA Mission Expert persona
+   ✓ System prompt requires source citations
+   ✓ System prompt mentions conversation history awareness
+
+2. LIVE MULTI-TURN CONVERSATION TEST:
+   Turn 1 Question: What problem did Apollo 13 encounter?
+   Turn 2 Question: What did they do next?
+
+3. CONTEXT PRESERVATION CHECK:
+   ✓ Follow-up response maintains context from prior turn
+```
+
+**Note:** Requires `OPENAI_API_KEY` for the live conversation test.
+
+---
+
 ## Submission Checklist
 
 - [ ] All TODO items implemented in all Python files
 - [ ] End-to-end testing completed (embedding → chat → evaluation)
-- [ ] Sample questions provided in `evaluation_dataset.txt`
+- [ ] Sample questions provided in `test_questions.json`
 - [ ] All code is clean and documented
 - [ ] Project files zipped into a single archive
 
