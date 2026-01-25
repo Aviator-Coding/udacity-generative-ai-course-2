@@ -12,17 +12,6 @@ _ = load_dotenv()
 def test_multi_turn_conversation():
     """
     Test multi-turn conversation history management.
-
-    This validates that follow-up questions correctly incorporate prior turns.
-    The conversation flow tests:
-    1. Initial question about Apollo 13
-    2. Follow-up question using pronouns ("they", "the crew") that depend on prior context
-    3. Verifies the LLM maintains awareness of the conversation topic
-
-    Requirements validated:
-    - System prompt positions assistant as NASA mission expert with source citations
-    - Conversation history maintains role + content per turn
-    - Follow-up questions reliably incorporate prior context
     """
     print("\n" + "="*80)
     print("MULTI-TURN CONVERSATION TEST")
