@@ -248,23 +248,30 @@ def main():
     
     # Chat input
     if prompt := st.chat_input("Ask about NASA space missions..."):
-        # Add user message to chat history
+        # CONVERSATION HISTORY MANAGEMENT:
+        # 1. Store raw user message in session state for history tracking
+        # 2. Pass previous turns (role + content) to LLM for context continuity
+        # 3. Current message gets formatted with retrieved context in llm_client
+        # 4. Store assistant response to maintain full conversation thread
+        # This enables follow-up questions that reference previous context
+
+        # Add user message to chat history (raw message for history)
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-        
+
         # Generate assistant response
         with st.chat_message("assistant"):
             with st.spinner("Searching documents and generating response..."):
-                # Retrieve relevant documents
+                # Retrieve relevant documents for current query
                 docs_result = retrieve_documents(
                     collection,
                     prompt,
                     n_docs,
                     similarity_threshold=similarity_threshold
                 )
-                
-                # Format context
+
+                # Format context from retrieved documents
                 context = ""
                 contexts_list = []
                 if docs_result and docs_result.get("documents") and docs_result["documents"][0]:
@@ -273,31 +280,35 @@ def main():
                     st.session_state.last_contexts = contexts_list
                 else:
                     st.warning("No relevant documents found. Response generated from general knowledge.")
-                
-                # Generate response
+
+                # Generate response with conversation history
+                # Pass all previous messages (excluding current) for multi-turn context
+                # The LLM receives: previous turns + current question with retrieved context
+                conversation_history = st.session_state.messages[:-1]  # Exclude just-added user message
+
                 response = generate_response(
                     openai_key,
                     prompt,
                     context,
-                    st.session_state.messages[:-1],
+                    conversation_history,
                     model_choice,
                     temperature,
                     max_tokens,
                     history_limit
                 )
                 st.markdown(response)
-                
+
                 # Evaluate response quality if enabled (only when contexts exist)
                 if enable_evaluation and RAGAS_AVAILABLE and contexts_list:
                     with st.spinner("Evaluating response quality..."):
                         evaluation_scores = evaluate_response_quality(
-                            prompt, 
-                            response, 
+                            prompt,
+                            response,
                             contexts_list
                         )
                         st.session_state.last_evaluation = evaluation_scores
-        
-        # Add assistant response to chat history
+
+        # Add assistant response to chat history for future turns
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.rerun()
 
