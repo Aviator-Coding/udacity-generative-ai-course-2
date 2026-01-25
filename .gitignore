@@ -221,3 +221,5 @@ scraped_content
 # Auto Claude data directory
 .auto-claude/
 .DS_Store
+
+chroma_db_openai
